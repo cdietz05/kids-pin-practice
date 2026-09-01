@@ -106,6 +106,7 @@
 
   .dot
   {
+    position: relative;
     width: clamp(20px, 6vw, 30px);
     height: clamp(20px, 6vw, 30px);
     border-radius: 50%;
@@ -113,6 +114,23 @@
     background: transparent;
     transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
   }
+
+  .dot__num
+  {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: 800;
+    font-size: clamp(1.2rem, 6vw, 1.7rem);
+    line-height: 1;
+    color: var(--ink);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  .dots--peek .dot__num { opacity: 1; }
 
   .dot--filled { background: var(--ink); border-color: var(--ink); transform: scale(1.05); }
   .dot--win.dot--filled { background: var(--accent); border-color: var(--accent); }
@@ -140,12 +158,6 @@
     transition: color 120ms ease, font-size 120ms ease, letter-spacing 120ms ease;
   }
 
-  .message--peek
-  {
-    color: var(--ink);
-    font-size: clamp(1.5rem, 8vw, 2.1rem);
-    letter-spacing: 0.28em;
-  }
 
   .keypad
   {
@@ -580,6 +592,9 @@
     {
       var s = document.createElement("span");
       s.className = "dot";
+      var num = document.createElement("b");
+      num.className = "dot__num";
+      s.appendChild(num);
       dotsEl.appendChild(s);
     }
   }
@@ -623,8 +638,17 @@
       e.preventDefault();
     }
     peeking = true;
-    msgEl.textContent = "PIN  " + getTarget().split("").join("  ");
-    msgEl.classList.add("message--peek");
+    var pin = getTarget();
+    var nodes = dotsEl.children;
+    for (var i = 0; i < nodes.length; i++)
+    {
+      var b = nodes[i].querySelector(".dot__num");
+      if (b)
+      {
+        b.textContent = pin.charAt(i);
+      }
+    }
+    dotsEl.classList.add("dots--peek");
   }
 
   function peekHide()
@@ -634,7 +658,7 @@
       return;
     }
     peeking = false;
-    msgEl.classList.remove("message--peek");
+    dotsEl.classList.remove("dots--peek");
     hint();
   }
 

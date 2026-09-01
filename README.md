@@ -8,7 +8,8 @@ A touch-friendly single-page tool for helping a kid memorize a 6-digit PIN.
 - When the child types a 6-digit PIN that matches, the screen throws confetti,
   plays a cheer, and shows a **Practice Again** button so they can keep going.
 - A wrong entry just gives a gentle shake and clears itself — no scary red X.
-- **👁 Hold to peek** shows the set PIN only while the button is held down.
+- **👁 Hold to peek** shows the set PIN, one digit under each circle, only
+  while the button is held down.
 
 ## Use it
 
