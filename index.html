@@ -137,6 +137,14 @@
     font-weight: 700;
     color: var(--muted);
     text-align: center;
+    transition: color 120ms ease, font-size 120ms ease, letter-spacing 120ms ease;
+  }
+
+  .message--peek
+  {
+    color: var(--ink);
+    font-size: clamp(1.5rem, 8vw, 2.1rem);
+    letter-spacing: 0.28em;
   }
 
   .keypad
@@ -205,6 +213,22 @@
   }
 
   .restart--ghost:active { transform: none; }
+
+  .footer-actions
+  {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #hintBtn
+  {
+    touch-action: none;
+    border: 2px dashed var(--key-border);
+  }
+
+  #hintBtn:active { background: rgba(47, 158, 110, 0.12); }
 
   [hidden] { display: none !important; }
 
@@ -422,7 +446,10 @@
     <button class="key key--action" type="button" data-key="back" aria-label="Delete last digit">&#9003;</button>
   </div>
 
-  <button id="restartBtn" class="restart restart--ghost" type="button">Start over</button>
+  <div class="footer-actions">
+    <button id="hintBtn" class="restart restart--ghost" type="button" aria-label="Hold to peek at the PIN">👁 Hold to peek</button>
+    <button id="restartBtn" class="restart restart--ghost" type="button">Start over</button>
+  </div>
 </main>
 
 <div id="celebrate" class="celebrate" hidden>
@@ -465,6 +492,7 @@
   var msgEl = document.getElementById("message");
   var keypadEl = document.getElementById("keypad");
   var restartBtn = document.getElementById("restartBtn");
+  var hintBtn = document.getElementById("hintBtn");
   var celebrateEl = document.getElementById("celebrate");
   var celebrateLine = document.getElementById("celebrateLine");
   var againBtn = document.getElementById("againBtn");
@@ -478,6 +506,7 @@
 
   var entry = "";
   var locked = false;
+  var peeking = false;
 
   var WIN_LINES = [
     "You know your PIN!",
@@ -567,12 +596,38 @@
 
   function setMessage(t)
   {
+    if (peeking)
+    {
+      return;
+    }
     msgEl.textContent = t || "";
   }
 
   function hint()
   {
     setMessage(usingDefault() ? "Parents: tap ⚙️ to set the PIN" : "");
+  }
+
+  function peekShow(e)
+  {
+    if (e && e.cancelable)
+    {
+      e.preventDefault();
+    }
+    peeking = true;
+    msgEl.textContent = "PIN  " + getTarget().split("").join("  ");
+    msgEl.classList.add("message--peek");
+  }
+
+  function peekHide()
+  {
+    if (!peeking)
+    {
+      return;
+    }
+    peeking = false;
+    msgEl.classList.remove("message--peek");
+    hint();
   }
 
   function press(key)
@@ -849,6 +904,13 @@
 
   restartBtn.addEventListener("click", reset);
   againBtn.addEventListener("click", reset);
+
+  hintBtn.addEventListener("pointerdown", peekShow);
+  hintBtn.addEventListener("pointerup", peekHide);
+  hintBtn.addEventListener("pointerleave", peekHide);
+  hintBtn.addEventListener("pointercancel", peekHide);
+  hintBtn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  window.addEventListener("blur", peekHide);
   settingsBtn.addEventListener("click", openSettings);
   settingsCancel.addEventListener("click", closeSettings);
   settingsSave.addEventListener("click", saveSettings);
