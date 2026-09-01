@@ -63,6 +63,15 @@
     margin: 0 auto;
   }
 
+  .panel
+  {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(14px, 3.5vh, 34px);
+  }
+
   header
   {
     width: 100%;
@@ -437,19 +446,93 @@
     .key:active { background: #313a52; }
     .celebrate { background: rgba(29, 35, 51, 0.85); }
   }
+
+  /* Short landscape (phones held sideways): two columns so the whole
+     thing fits without scrolling. Tablets stay in the tall single
+     column - they have the height for it. */
+  @media (orientation: landscape) and (max-height: 600px)
+  {
+    body { overflow-y: auto; }
+
+    .app
+    {
+      flex-flow: row wrap;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(14px, 4vw, 44px);
+      max-width: 860px;
+      padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    }
+
+    .panel
+    {
+      order: 1;
+      width: auto;
+      flex: 0 1 260px;
+      gap: clamp(8px, 2.2vh, 16px);
+    }
+
+    h1 { font-size: clamp(1.15rem, 5vh, 1.5rem); }
+    .icon-btn { width: 44px; height: 44px; font-size: 1.25rem; }
+
+    #keypad
+    {
+      order: 2;
+      width: min(48vw, 340px);
+      gap: clamp(6px, 1.6vh, 12px);
+    }
+
+    .key
+    {
+      aspect-ratio: auto;
+      height: clamp(40px, 12.5vh, 64px);
+      font-size: clamp(1.15rem, 5.5vh, 1.9rem);
+      border-radius: 14px;
+      box-shadow: 0 4px 0 var(--key-shadow);
+    }
+
+    .key:active { box-shadow: 0 1px 0 var(--key-shadow); }
+    .key--action { font-size: clamp(0.8rem, 3.4vh, 1.1rem); }
+
+    .dot { width: clamp(15px, 3.4vh, 22px); height: clamp(15px, 3.4vh, 22px); }
+    .dot__num { top: calc(100% + 12px); font-size: clamp(1rem, 4.6vh, 1.4rem); }
+    .message { font-size: 0.9rem; min-height: 1.1em; }
+
+    .footer-actions
+    {
+      order: 3;
+      flex-basis: 100%;
+      gap: 8px;
+    }
+
+    .restart--ghost { font-size: 0.9rem; padding: 6px 12px; }
+
+    .celebrate__card, .modal__card
+    {
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 18px 22px;
+    }
+
+    .celebrate__emoji { font-size: 2.6rem; }
+    .celebrate__card h2 { font-size: 1.4rem; margin-top: 8px; }
+    .celebrate__card p { font-size: 1rem; margin-bottom: 14px; }
+  }
 </style>
 </head>
 <body>
 <canvas id="confetti"></canvas>
 
 <main class="app">
-  <header>
-    <h1>PIN Practice</h1>
-    <button id="settingsBtn" class="icon-btn" type="button" aria-label="Parent settings" title="Parent settings">&#9881;&#65039;</button>
-  </header>
+  <div class="panel">
+    <header>
+      <h1>PIN Practice</h1>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Parent settings" title="Parent settings">&#9881;&#65039;</button>
+    </header>
 
-  <div id="dots" class="dots" role="img" aria-label="PIN entry progress"></div>
-  <p id="message" class="message" aria-live="polite"></p>
+    <div id="dots" class="dots" role="img" aria-label="PIN entry progress"></div>
+    <p id="message" class="message" aria-live="polite"></p>
+  </div>
 
   <div id="keypad" class="keypad">
     <button class="key" type="button" data-key="1">1</button>
