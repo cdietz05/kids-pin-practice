@@ -1,0 +1,19 @@
+{
+  "name": "PIN Practice",
+  "short_name": "PIN Practice",
+  "description": "A big, friendly keypad for helping a child learn a 6-digit PIN.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

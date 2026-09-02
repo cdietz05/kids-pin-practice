@@ -1,31 +1,62 @@
 # PIN Practice
 
-A touch-friendly single-page tool for helping a kid memorize a 6-digit PIN.
+A big, friendly, touch-first keypad for helping a young child memorize a
+6-digit PIN. One HTML file, no build step, no dependencies, works offline.
 
-- Big, touch-enabled number pad that works on phones and tablets. Each digit
-  is its own bright color, pops when pressed, flashes large on screen, and is
-  spoken aloud ("three!") with a little blip.
-- A parent sets the target PIN behind the **⚙️** settings icon. The PIN is
-  stored only in that browser (`localStorage`) and is never shown on screen.
-- When the child types a 6-digit PIN that matches, the screen throws confetti,
-  plays a cheer, and shows a **Practice Again** button so they can keep going.
-- A wrong entry just gives a gentle shake and clears itself — no scary red X.
-- **👁 Hold to peek** shows the set PIN, one digit under each circle, only
-  while the button is held down.
+**Live:** https://cdietz05.github.io/kids-pin-practice/
 
-## Use it
+## What it does
 
-Open `index.html` in any modern browser, or visit the GitHub Pages site for
-this repo. No build step, no dependencies, works offline.
+- **Chunky colored keypad.** Every digit has its own color, bounces when
+  pressed, flashes huge on screen, is spoken aloud ("three!"), plays a short
+  pitched blip, and buzzes on devices with a vibration motor.
+- **Six dots** fill as digits go in.
+- **Correct PIN** → confetti, a happy chord, a spoken cheer, a "YOU DID IT!"
+  card with **Practice Again**, and a ⭐ counter of wins this session.
+- **Wrong PIN** → a gentle shake and a spoken encouragement ("So close! Give
+  it another try."), then it clears itself. No scary red X.
+- **👀 Peek** reveals the PIN under the dots while the button is held —
+  **once per try**. It re-arms on the next attempt.
+- Fits portrait phones, landscape phones (two-column layout), and tablets.
+  Light and dark themes. Honors `prefers-reduced-motion`.
+- Installable to a home screen (web app manifest) for a full-screen,
+  kiosk-like experience on a kid's tablet.
 
-## Set the PIN
+## Setting the PIN
 
-1. Tap the **⚙️** icon (top right).
-2. Enter the 6-digit PIN twice and tap **Save PIN**.
+**Press and hold** the ⚙️ button for about a second — a quick tap won't open
+it, so a curious kid poking the screen can't reach the PIN editor. Enter the
+6-digit PIN twice and tap **Save PIN**.
 
 Until a PIN is set, the practice PIN is `123456`.
 
-## Keyboard
+## About the stored PIN
 
-For testing on a desktop: number keys type, `Backspace` deletes, `Esc` clears,
-`Enter` restarts after a win.
+The PIN lives in this browser's `localStorage`, on that one device. It is
+never sent anywhere — the page makes no network requests at all after load
+(a Content-Security-Policy header on the page enforces `connect-src 'none'`).
+
+It is **not encrypted**, because the Peek feature has to be able to show it.
+Anyone with the unlocked device and devtools could read it. Treat it the way
+you'd treat a sticky note: fine on a family tablet, not on a shared or
+borrowed one. **Forget PIN** in Settings wipes it immediately.
+
+## Voice
+
+The page uses the browser's built-in `speechSynthesis`. Quality varies a lot
+by device, so rather than take whatever voice is listed first, it scores the
+available English voices and prefers the neural / "Natural" / cloud-backed
+ones. A grown-up can override the pick under **Voice** in Settings (with a
+**Test** button); the choice is remembered.
+
+That's as natural as it gets without a paid cloud TTS service — those need an
+API key, and a public static page is not a safe place to keep one.
+
+## Keyboard (handy for testing on a desktop)
+
+| Key | Action |
+| --- | --- |
+| `0`–`9` | Enter a digit |
+| `Backspace` | Delete last digit |
+| `Esc` | Clear the entry (or close Settings) |
+| `Enter` / `Space` | Practice again, after a win |

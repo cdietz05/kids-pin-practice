@@ -3,11 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffffff">
+<meta name="description" content="A big, friendly keypad for helping a child learn a 6-digit PIN.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PIN Practice">
 <title>PIN Practice</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" referrerpolicy="no-referrer">
 <style>
   :root
   {
@@ -18,10 +28,12 @@
     --key-border: #e6e6ef;
     --key-shadow: #dcdce8;
     --accent: #2f9e6e;
+    --accent-dark: #24805a;
     --accent-ink: #ffffff;
     --wrong: #e2574c;
     --focus: #3b82c4;
     --title: #1d7fd6;
+    --scrim: rgba(255, 255, 255, 0.88);
     --font-fun: "Baloo 2", "Fredoka", "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
   }
 
@@ -44,6 +56,26 @@
     user-select: none;
     overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: none;
+  }
+
+  :focus-visible
+  {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .visually-hidden
+  {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   #confetti
@@ -85,7 +117,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
   }
 
   h1
@@ -98,9 +130,21 @@
     text-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
   }
 
+  .stars
+  {
+    margin-left: auto;
+    font-size: clamp(0.95rem, 4vw, 1.15rem);
+    font-weight: 800;
+    color: #b8860b;
+    white-space: nowrap;
+  }
+
+  .stars:empty { display: none; }
+
   .icon-btn
   {
     appearance: none;
+    flex: 0 0 auto;
     border: 2px solid var(--key-border);
     background: var(--card);
     color: var(--ink);
@@ -110,11 +154,22 @@
     font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;
-    touch-action: manipulation;
+    touch-action: none;
     box-shadow: 0 3px 0 var(--key-shadow);
+    transition: transform 120ms ease, box-shadow 120ms ease;
   }
 
   .icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
+
+  /* Wind-up while the gear is being held down - the settings panel only
+     opens on a deliberate long press, so a stray toddler tap can't
+     reach (or overwrite) the saved PIN. */
+  .icon-btn.is-holding
+  {
+    transform: scale(0.9) rotate(180deg);
+    transition: transform 800ms linear;
+    box-shadow: 0 1px 0 var(--key-shadow);
+  }
 
   .dots
   {
@@ -174,9 +229,7 @@
     font-weight: 700;
     color: var(--muted);
     text-align: center;
-    transition: color 120ms ease, font-size 120ms ease, letter-spacing 120ms ease;
   }
-
 
   .keypad
   {
@@ -222,7 +275,7 @@
     box-shadow: 0 5px 0 var(--key-shadow);
   }
 
-  .key--action:active { filter: none; background: #f3ffe9; }
+  .key--action:active { filter: none; background: #f1f1f7; }
 
   @keyframes keyPop
   {
@@ -274,10 +327,10 @@
     border-radius: 999px;
     cursor: pointer;
     touch-action: manipulation;
-    box-shadow: 0 5px 0 #24805a;
+    box-shadow: 0 5px 0 var(--accent-dark);
   }
 
-  .restart:active { transform: translateY(3px); box-shadow: 0 2px 0 #24805a; }
+  .restart:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--accent-dark); }
 
   .restart--ghost
   {
@@ -288,7 +341,7 @@
     padding: 8px 16px;
   }
 
-  .restart--ghost:active { transform: none; }
+  .restart--ghost:active { transform: none; box-shadow: none; }
 
   .footer-actions
   {
@@ -296,6 +349,7 @@
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
   }
 
   .peek-btn
@@ -315,7 +369,7 @@
     align-items: center;
     gap: 8px;
     box-shadow: 0 5px 0 #d9a100, 0 8px 14px rgba(0, 0, 0, 0.14);
-    transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease;
+    transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease, background-color 150ms ease;
   }
 
   .peek-btn .peek-eye { font-size: 1.25em; line-height: 1; }
@@ -333,21 +387,33 @@
     animation: peekWiggle 480ms ease-in-out infinite;
   }
 
-  .peek-btn:disabled
+  /* Spent, not disabled - a disabled button swallows the tap, so a kid
+     gets no answer when they try to peek twice. This still reacts and
+     explains itself. */
+  .peek-btn.is-spent
   {
     background: var(--key-border);
     color: var(--muted);
     box-shadow: none;
-    filter: none;
-    opacity: 0.65;
+    opacity: 0.7;
     cursor: default;
-    transform: none;
   }
+
+  .peek-btn.is-spent:active { transform: none; filter: none; box-shadow: none; }
+
+  .peek-btn.is-denied { animation: peekNo 340ms ease; }
 
   @keyframes peekWiggle
   {
     0%, 100% { transform: translateY(4px) scale(1) rotate(-3deg); }
     50% { transform: translateY(4px) scale(1.04) rotate(3deg); }
+  }
+
+  @keyframes peekNo
+  {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
   }
 
   [hidden] { display: none !important; }
@@ -362,7 +428,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(255, 247, 236, 0.82);
+    background: var(--scrim);
     backdrop-filter: blur(2px);
   }
 
@@ -423,17 +489,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    background: rgba(36, 49, 77, 0.45);
+    padding: 20px;
+    background: rgba(36, 49, 77, 0.5);
   }
 
   .modal__card
   {
     background: var(--card);
     border-radius: 24px;
-    padding: 26px 24px;
+    padding: 24px 22px;
     max-width: 380px;
     width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    overflow-y: auto;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   }
 
@@ -441,10 +510,10 @@
 
   .modal__card > p
   {
-    margin: 0 0 18px;
+    margin: 0 0 16px;
     color: var(--muted);
-    font-size: 0.98rem;
-    line-height: 1.4;
+    font-size: 0.95rem;
+    line-height: 1.45;
     font-weight: 600;
   }
 
@@ -456,16 +525,14 @@
     margin-bottom: 14px;
   }
 
-  .modal input
+  .modal input,
+  .modal select
   {
     display: block;
     width: 100%;
     margin-top: 6px;
     font-family: inherit;
-    font-size: 1.7rem;
     font-weight: 800;
-    letter-spacing: 0.4em;
-    text-align: center;
     padding: 12px 10px;
     border: 2px solid var(--key-border);
     border-radius: 14px;
@@ -475,17 +542,44 @@
     caret-color: #10192e;
   }
 
+  .modal input
+  {
+    font-size: 1.7rem;
+    letter-spacing: 0.4em;
+    text-align: center;
+  }
+
+  .modal select
+  {
+    font-size: 1rem;
+    letter-spacing: normal;
+    text-align: left;
+  }
+
   .modal input::placeholder
   {
     color: #9aa4c0;
     -webkit-text-fill-color: #9aa4c0;
   }
 
-  .modal input:focus
+  .modal input:focus,
+  .modal select:focus
   {
     outline: 3px solid var(--focus);
     outline-offset: 1px;
     border-color: var(--focus);
+  }
+
+  .status-line
+  {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f4f4fa;
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.4;
   }
 
   .settings-msg
@@ -502,9 +596,12 @@
   .modal__actions
   {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: flex-end;
+    flex-wrap: wrap;
   }
+
+  .modal__actions .btn--spacer { margin-right: auto; }
 
   .btn
   {
@@ -515,7 +612,7 @@
     font-family: inherit;
     font-weight: 800;
     font-size: 1rem;
-    padding: 12px 20px;
+    padding: 12px 18px;
     border-radius: 12px;
     cursor: pointer;
     touch-action: manipulation;
@@ -528,7 +625,18 @@
     border: 2px solid var(--key-border);
   }
 
+  .btn--danger { background: transparent; color: var(--wrong); border: 2px solid var(--wrong); }
+
   .btn:active { transform: translateY(2px); }
+
+  .fine-print
+  {
+    margin: 16px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--muted);
+    font-weight: 600;
+  }
 
   @media (prefers-color-scheme: dark)
   {
@@ -542,9 +650,11 @@
       --key-shadow: #131319;
       --focus: #6ea8e0;
       --title: #63b3f2;
+      --scrim: rgba(27, 27, 36, 0.88);
     }
-    .key--action:active { background: #3a3157; }
-    .celebrate { background: rgba(29, 35, 51, 0.85); }
+    .key--action:active { background: #363648; }
+    .stars { color: #f5c451; }
+    .status-line { background: #22222e; }
   }
 
   /* Portrait phones: cap key height off the viewport so all four rows
@@ -575,8 +685,6 @@
      column - they have the height for it. */
   @media (orientation: landscape) and (max-height: 600px)
   {
-    body { overflow-y: auto; }
-
     .app
     {
       flex-flow: row wrap;
@@ -632,13 +740,7 @@
     .restart--ghost { font-size: 0.9rem; padding: 6px 12px; }
     .peek-btn { font-size: 0.95rem; padding: 8px 16px; }
 
-    .celebrate__card, .modal__card
-    {
-      max-height: 92vh;
-      overflow-y: auto;
-      padding: 18px 22px;
-    }
-
+    .celebrate__card { padding: 18px 22px; max-height: 92vh; overflow-y: auto; }
     .celebrate__emoji { font-size: 2.6rem; }
     .celebrate__card h2 { font-size: 1.4rem; margin-top: 8px; }
     .celebrate__card p { font-size: 1rem; margin-bottom: 14px; }
@@ -646,22 +748,30 @@
 
   @media (prefers-reduced-motion: reduce)
   {
-    .key--pop, .echo--go, .celebrate__emoji, .celebrate__card, .peek-btn.is-peeking { animation: none !important; }
+    .key--pop,
+    .echo--go,
+    .celebrate__emoji,
+    .celebrate__card,
+    .peek-btn.is-peeking,
+    .peek-btn.is-denied,
+    .shake { animation: none !important; }
     .echo { opacity: 0 !important; }
+    .icon-btn.is-holding { transition: none; transform: scale(0.94); }
   }
 </style>
 </head>
 <body>
-<canvas id="confetti"></canvas>
+<canvas id="confetti" aria-hidden="true"></canvas>
 
 <main class="app">
   <div class="panel">
     <header>
       <h1>PIN Practice</h1>
-      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Parent settings" title="Parent settings">&#9881;&#65039;</button>
+      <p id="stars" class="stars" aria-live="polite"></p>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings">&#9881;&#65039;</button>
     </header>
 
-    <div id="dots" class="dots" role="img" aria-label="PIN entry progress"></div>
+    <div id="dots" class="dots" role="img" aria-label="No digits entered yet"></div>
     <p id="message" class="message" aria-live="polite"></p>
   </div>
 
@@ -683,15 +793,15 @@
   </div>
 
   <div class="footer-actions">
-    <button id="hintBtn" class="peek-btn" type="button" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">👀</span> Peek</button>
+    <button id="hintBtn" class="peek-btn" type="button" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">&#128064;</span> Peek</button>
     <button id="restartBtn" class="restart restart--ghost" type="button">Start over</button>
   </div>
 </main>
 
 <div id="celebrate" class="celebrate" hidden>
-  <div class="celebrate__card">
-    <div class="celebrate__emoji">&#127881;</div>
-    <h2>YOU DID IT!</h2>
+  <div class="celebrate__card" role="dialog" aria-modal="true" aria-labelledby="celebrateTitle">
+    <div class="celebrate__emoji" aria-hidden="true">&#127881;</div>
+    <h2 id="celebrateTitle">YOU DID IT!</h2>
     <p id="celebrateLine">You know your PIN!</p>
     <button id="againBtn" class="restart" type="button">Practice Again</button>
   </div>
@@ -699,18 +809,38 @@
 
 <div id="settings" class="modal" hidden>
   <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <h2 id="settingsTitle">Parent Settings</h2>
-    <p>Set the 6-digit PIN your child should practice. It is stored only on this device and never shown here.</p>
-    <label>New PIN
-      <input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="------">
+    <h2 id="settingsTitle">Grown-up Settings</h2>
+    <p>Set the 6-digit PIN to practise. It is never shown on this screen.</p>
+
+    <p id="pinStatus" class="status-line"></p>
+
+    <label for="pinInput">New PIN
+      <input id="pinInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="------">
     </label>
-    <label>Confirm PIN
-      <input id="pinConfirm" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="------">
+    <label for="pinConfirm">Confirm PIN
+      <input id="pinConfirm" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="------">
     </label>
+
+    <label for="voiceSelect">Voice
+      <select id="voiceSelect"></select>
+    </label>
+
     <p id="settingsMsg" class="settings-msg" aria-live="polite"></p>
+
     <div class="modal__actions">
+      <button id="voiceTest" class="btn btn--ghost btn--spacer" type="button">&#128266; Test</button>
       <button id="settingsCancel" class="btn btn--ghost" type="button">Cancel</button>
       <button id="settingsSave" class="btn" type="button">Save PIN</button>
+    </div>
+
+    <p class="fine-print">
+      The PIN is kept in this browser's local storage on this device only &mdash;
+      it is never sent anywhere, but it is not encrypted, so use
+      <strong>Forget PIN</strong> on a shared or borrowed device.
+    </p>
+
+    <div class="modal__actions" style="margin-top: 12px;">
+      <button id="forgetBtn" class="btn btn--danger" type="button">Forget PIN</button>
     </div>
   </div>
 </div>
@@ -721,12 +851,15 @@
   "use strict";
 
   var STORE_KEY = "pinPractice.target.v1";
+  var VOICE_KEY = "pinPractice.voice.v1";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
+  var HOLD_MS = 800;
 
   var dotsEl = document.getElementById("dots");
   var msgEl = document.getElementById("message");
   var echoEl = document.getElementById("echo");
+  var starsEl = document.getElementById("stars");
   var keypadEl = document.getElementById("keypad");
   var restartBtn = document.getElementById("restartBtn");
   var hintBtn = document.getElementById("hintBtn");
@@ -737,9 +870,13 @@
   var settingsEl = document.getElementById("settings");
   var pinInput = document.getElementById("pinInput");
   var pinConfirm = document.getElementById("pinConfirm");
+  var pinStatus = document.getElementById("pinStatus");
   var settingsMsg = document.getElementById("settingsMsg");
   var settingsSave = document.getElementById("settingsSave");
   var settingsCancel = document.getElementById("settingsCancel");
+  var forgetBtn = document.getElementById("forgetBtn");
+  var voiceSelect = document.getElementById("voiceSelect");
+  var voiceTest = document.getElementById("voiceTest");
 
   var entry = "";
   var locked = false;
@@ -747,6 +884,7 @@
   // One peek per try - consumed on the first peek, re-armed when a new
   // try begins (reset, or after a wrong entry clears).
   var peekUsed = false;
+  var wins = 0;
 
   var DIGIT_COLORS = [
     "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
@@ -781,25 +919,36 @@
     return arr[(Math.random() * arr.length) | 0];
   }
 
-  function getTarget()
+  function reducedMotion()
   {
     try
     {
-      var v = localStorage.getItem(STORE_KEY);
-      if (v && /^[0-9]{6}$/.test(v))
-      {
-        return v;
-      }
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     }
-    catch (e) {}
-    return DEFAULT_PIN;
+    catch (e)
+    {
+      return false;
+    }
   }
 
-  function setTarget(v)
+  /* ---------- storage ---------- */
+  function readStored(key)
   {
     try
     {
-      localStorage.setItem(STORE_KEY, v);
+      return localStorage.getItem(key);
+    }
+    catch (e)
+    {
+      return null;
+    }
+  }
+
+  function writeStored(key, value)
+  {
+    try
+    {
+      localStorage.setItem(key, value);
       return true;
     }
     catch (e)
@@ -808,21 +957,32 @@
     }
   }
 
-  function usingDefault()
+  function getTarget()
   {
-    try
+    var v = readStored(STORE_KEY);
+    // Re-validated on every read, not just on save - whatever is in
+    // storage could have been edited by hand or left over from another
+    // version, and only a clean 6-digit string is ever usable here.
+    if (v && /^[0-9]{6}$/.test(v))
     {
-      return !localStorage.getItem(STORE_KEY);
+      return v;
     }
-    catch (e)
-    {
-      return true;
-    }
+    return DEFAULT_PIN;
   }
 
+  function usingDefault()
+  {
+    var v = readStored(STORE_KEY);
+    return !(v && /^[0-9]{6}$/.test(v));
+  }
+
+  /* ---------- entry display ---------- */
   function buildDots()
   {
-    dotsEl.innerHTML = "";
+    while (dotsEl.firstChild)
+    {
+      dotsEl.removeChild(dotsEl.firstChild);
+    }
     for (var i = 0; i < LEN; i++)
     {
       var s = document.createElement("span");
@@ -850,6 +1010,9 @@
       }
       nodes[i].className = cls;
     }
+    dotsEl.setAttribute("aria-label", entry.length
+      ? entry.length + " of " + LEN + " digits entered"
+      : "No digits entered yet");
   }
 
   function setMessage(t)
@@ -863,13 +1026,26 @@
 
   function hint()
   {
-    setMessage(usingDefault() ? "Tap ⚙️ to set the PIN" : "");
+    setMessage(usingDefault() ? "Hold ⚙️ to set the PIN" : "");
   }
 
+  function flashMessage(text, ms)
+  {
+    setMessage(text);
+    window.setTimeout(hint, ms || 2200);
+  }
+
+  function renderStars()
+  {
+    starsEl.textContent = wins > 0 ? "⭐ " + wins : "";
+  }
+
+  /* ---------- peek ---------- */
   function armPeek()
   {
     peekUsed = false;
-    hintBtn.disabled = false;
+    hintBtn.classList.remove("is-spent");
+    hintBtn.setAttribute("aria-disabled", "false");
   }
 
   function peekShow(e)
@@ -880,6 +1056,10 @@
     }
     if (peekUsed)
     {
+      hintBtn.classList.remove("is-denied");
+      void hintBtn.offsetWidth;
+      hintBtn.classList.add("is-denied");
+      flashMessage("One peek per try — you can do it!");
       return;
     }
     peekUsed = true;
@@ -909,12 +1089,16 @@
     hintBtn.classList.remove("is-peeking");
     if (peekUsed)
     {
-      hintBtn.disabled = true;
+      hintBtn.classList.add("is-spent");
+      hintBtn.setAttribute("aria-disabled", "true");
     }
     hint();
   }
 
-  /* ---------- toddler feedback ---------- */
+  /* ---------- audio ---------- */
+  // One shared AudioContext for the whole page. Creating a fresh one per
+  // sound (as the win chord used to) leaks contexts and hits the
+  // per-page limit browsers enforce after a handful of wins.
   var audioCtx = null;
 
   function ac()
@@ -924,18 +1108,38 @@
       if (!audioCtx)
       {
         var AC = window.AudioContext || window.webkitAudioContext;
-        if (AC)
+        if (!AC)
         {
-          audioCtx = new AC();
+          return null;
         }
+        audioCtx = new AC();
       }
-      if (audioCtx && audioCtx.state === "suspended")
+      if (audioCtx.state === "suspended")
       {
         audioCtx.resume();
       }
     }
-    catch (e) {}
+    catch (e)
+    {
+      return null;
+    }
     return audioCtx;
+  }
+
+  function tone(ctx, freq, startOffset, peak, length, type)
+  {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    var t = ctx.currentTime + startOffset;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + length + 0.05);
   }
 
   function blip(digit)
@@ -947,40 +1151,244 @@
     }
     try
     {
-      var osc = c.createOscillator();
-      var gain = c.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 330 + Number(digit) * 45;
-      var t = c.currentTime;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-      osc.connect(gain);
-      gain.connect(c.destination);
-      osc.start(t);
-      osc.stop(t + 0.24);
+      tone(c, 330 + Number(digit) * 45, 0, 0.22, 0.2, "sine");
+    }
+    catch (e) {}
+  }
+
+  function happySound()
+  {
+    var c = ac();
+    if (!c)
+    {
+      return;
+    }
+    try
+    {
+      var notes = [523.25, 659.25, 783.99, 1046.5];
+      for (var i = 0; i < notes.length; i++)
+      {
+        tone(c, notes[i], i * 0.12, 0.26, 0.34, "triangle");
+      }
+    }
+    catch (e) {}
+  }
+
+  function sadSound()
+  {
+    var c = ac();
+    if (!c)
+    {
+      return;
+    }
+    try
+    {
+      tone(c, 392, 0, 0.18, 0.22, "triangle");
+      tone(c, 311, 0.14, 0.18, 0.3, "triangle");
+    }
+    catch (e) {}
+  }
+
+  function buzz(pattern)
+  {
+    try
+    {
+      if (navigator && typeof navigator.vibrate === "function")
+      {
+        navigator.vibrate(pattern);
+      }
+    }
+    catch (e) {}
+  }
+
+  /* ---------- speech ---------- */
+  // Browser speech quality varies enormously by device: the same API
+  // gives you a warm neural voice on one phone and a 1990s robot on
+  // another. Rather than take whatever getVoices() lists first, score
+  // the available English voices and prefer the neural / "Natural" /
+  // cloud-backed ones, and let a grown-up override the pick in Settings
+  // (their choice is remembered). This is as natural as it gets without
+  // shipping an API key for a paid cloud TTS service, which has no safe
+  // home in a public static page.
+  var voices = [];
+  var chosenVoice = null;
+
+  function hasSpeech()
+  {
+    return typeof window.speechSynthesis !== "undefined" &&
+           typeof window.SpeechSynthesisUtterance !== "undefined";
+  }
+
+  function voiceScore(v)
+  {
+    if (!v)
+    {
+      return -999;
+    }
+    var name = ((v.name || "") + " " + (v.voiceURI || "")).toLowerCase();
+    var lang = (v.lang || "").toLowerCase();
+    var s = 0;
+    if (name.indexOf("natural") !== -1) { s += 60; }
+    if (name.indexOf("neural") !== -1) { s += 55; }
+    if (name.indexOf("premium") !== -1 || name.indexOf("enhanced") !== -1) { s += 40; }
+    if (name.indexOf("google") !== -1) { s += 35; }
+    if (name.indexOf("siri") !== -1) { s += 30; }
+    if (name.indexOf("online") !== -1) { s += 25; }
+    if (/samantha|aria|jenny|ava|allison|nicky|zoe|serena|karen|moira/.test(name)) { s += 18; }
+    if (/compact|espeak|pico|novelty|whisper|bells|organ|zarvox|trinoids|bubbles|cellos|bahh/.test(name)) { s -= 70; }
+    if (v.localService === false) { s += 10; }
+    if (lang.indexOf("en-us") === 0) { s += 12; }
+    else if (lang.indexOf("en-gb") === 0) { s += 10; }
+    else if (lang.indexOf("en") === 0) { s += 6; }
+    if (v.default) { s += 2; }
+    return s;
+  }
+
+  function loadVoices()
+  {
+    if (!hasSpeech())
+    {
+      return;
+    }
+    var all;
+    try
+    {
+      all = window.speechSynthesis.getVoices() || [];
+    }
+    catch (e)
+    {
+      return;
+    }
+    if (!all.length)
+    {
+      return;
+    }
+
+    var english = [];
+    for (var i = 0; i < all.length; i++)
+    {
+      if (/^en/i.test(all[i].lang || ""))
+      {
+        english.push(all[i]);
+      }
+    }
+    voices = english.length ? english : all.slice();
+    voices.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+
+    var savedURI = readStored(VOICE_KEY);
+    chosenVoice = null;
+    if (savedURI)
+    {
+      for (var j = 0; j < voices.length; j++)
+      {
+        if (voices[j].voiceURI === savedURI)
+        {
+          chosenVoice = voices[j];
+          break;
+        }
+      }
+    }
+    if (!chosenVoice)
+    {
+      chosenVoice = voices[0] || null;
+    }
+    fillVoiceSelect();
+  }
+
+  function fillVoiceSelect()
+  {
+    while (voiceSelect.firstChild)
+    {
+      voiceSelect.removeChild(voiceSelect.firstChild);
+    }
+    if (!voices.length)
+    {
+      var none = document.createElement("option");
+      none.textContent = "No voices available on this device";
+      none.value = "";
+      voiceSelect.appendChild(none);
+      voiceSelect.disabled = true;
+      return;
+    }
+    voiceSelect.disabled = false;
+    for (var i = 0; i < voices.length; i++)
+    {
+      var opt = document.createElement("option");
+      opt.value = voices[i].voiceURI;
+      // textContent, never innerHTML - voice names come from the OS and
+      // are not ours to trust as markup.
+      opt.textContent = voices[i].name + " (" + voices[i].lang + ")";
+      if (chosenVoice && voices[i].voiceURI === chosenVoice.voiceURI)
+      {
+        opt.selected = true;
+      }
+      voiceSelect.appendChild(opt);
+    }
+  }
+
+  // queue: true lets the line wait its turn instead of cutting off
+  // whatever is still speaking - that is what keeps the last digit from
+  // being clipped by the cheer that follows it.
+  function speak(text, rate, pitch, queue)
+  {
+    if (!hasSpeech() || !text)
+    {
+      return;
+    }
+    try
+    {
+      var synth = window.speechSynthesis;
+      var u = new SpeechSynthesisUtterance(String(text));
+      var natural = false;
+      if (chosenVoice)
+      {
+        u.voice = chosenVoice;
+        u.lang = chosenVoice.lang;
+        natural = voiceScore(chosenVoice) >= 30;
+      }
+      u.rate = rate;
+      // A good neural voice already sounds friendly; winding its pitch
+      // up makes it sound synthetic again. Only the fallback robot
+      // voices get the cheerful pitch bump.
+      u.pitch = natural ? Math.min(pitch, 1.08) : pitch;
+      u.volume = 1;
+      if (!queue && (synth.speaking || synth.pending))
+      {
+        synth.cancel();
+      }
+      synth.speak(u);
     }
     catch (e) {}
   }
 
   function sayDigit(digit)
   {
+    speak(NUM_WORDS[Number(digit)] || String(digit), 0.95, 1.3, false);
+  }
+
+  function cheer()
+  {
+    speak(pick(CHEERS), 1, 1.2, true);
+  }
+
+  function encourage()
+  {
+    speak(pick(TRY_AGAINS), 0.97, 1.15, true);
+  }
+
+  function stopSpeech()
+  {
     try
     {
-      if (!("speechSynthesis" in window))
+      if (hasSpeech())
       {
-        return;
+        window.speechSynthesis.cancel();
       }
-      var word = NUM_WORDS[Number(digit)] || String(digit);
-      var u = new SpeechSynthesisUtterance(word);
-      u.rate = 0.95;
-      u.pitch = 1.35;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
     }
     catch (e) {}
   }
 
+  /* ---------- key feedback ---------- */
   function bumpKey(key)
   {
     var b = keypadEl.querySelector('.key[data-key="' + key + '"]');
@@ -996,12 +1404,13 @@
   function echoDigit(digit)
   {
     echoEl.textContent = digit;
-    echoEl.style.color = DIGIT_COLORS[Number(digit)] || "var(--accent)";
+    echoEl.style.color = DIGIT_COLORS[Number(digit)] || "";
     echoEl.classList.remove("echo--go");
     void echoEl.offsetWidth;
     echoEl.classList.add("echo--go");
   }
 
+  /* ---------- game ---------- */
   function press(key)
   {
     if (locked)
@@ -1011,6 +1420,7 @@
     if (key === "back")
     {
       bumpKey("back");
+      buzz(8);
       entry = entry.slice(0, -1);
       renderDots();
       if (!entry)
@@ -1022,6 +1432,7 @@
     if (key === "clear")
     {
       bumpKey("clear");
+      buzz(8);
       entry = "";
       renderDots();
       hint();
@@ -1042,6 +1453,7 @@
     echoDigit(key);
     sayDigit(key);
     blip(key);
+    buzz(12);
     if (entry.length === LEN)
     {
       evaluate();
@@ -1066,7 +1478,9 @@
     renderDots("wrong");
     dotsEl.classList.add("shake");
     setMessage("Almost! Try again 💪");
+    sadSound();
     encourage();
+    buzz([40, 70, 40]);
     window.setTimeout(function ()
     {
       dotsEl.classList.remove("shake");
@@ -1075,12 +1489,14 @@
       hint();
       armPeek();
       locked = false;
-    }, 850);
+    }, 900);
   }
 
   function win()
   {
     locked = true;
+    wins += 1;
+    renderStars();
     renderDots("win");
     celebrateLine.textContent = pick(WIN_LINES);
     celebrateEl.hidden = false;
@@ -1088,6 +1504,8 @@
     window.setTimeout(launchConfetti, 450);
     happySound();
     cheer();
+    buzz([20, 40, 20, 40, 80]);
+    window.setTimeout(function () { againBtn.focus(); }, 120);
   }
 
   function reset()
@@ -1095,6 +1513,7 @@
     entry = "";
     locked = false;
     celebrateEl.hidden = true;
+    stopSpeech();
     renderDots();
     hint();
     armPeek();
@@ -1134,7 +1553,8 @@
   function launchConfetti()
   {
     sizeCanvas();
-    for (var i = 0; i < 150; i++)
+    var count = reducedMotion() ? 40 : 150;
+    for (var i = 0; i < count; i++)
     {
       pieces.push(makePiece());
     }
@@ -1174,79 +1594,21 @@
     rafId = window.requestAnimationFrame(tick);
   }
 
-  /* ---------- sound + speech ---------- */
-  function happySound()
-  {
-    try
-    {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC)
-      {
-        return;
-      }
-      var ac = new AC();
-      var notes = [523.25, 659.25, 783.99, 1046.5];
-      for (var i = 0; i < notes.length; i++)
-      {
-        var osc = ac.createOscillator();
-        var gain = ac.createGain();
-        osc.type = "triangle";
-        osc.frequency.value = notes[i];
-        var t = ac.currentTime + i * 0.12;
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.28, t + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
-        osc.connect(gain);
-        gain.connect(ac.destination);
-        osc.start(t);
-        osc.stop(t + 0.4);
-      }
-      window.setTimeout(function ()
-      {
-        try { ac.close(); } catch (e) {}
-      }, 1600);
-    }
-    catch (e) {}
-  }
-
-  function cheer()
-  {
-    try
-    {
-      if (!("speechSynthesis" in window))
-      {
-        return;
-      }
-      var u = new SpeechSynthesisUtterance(pick(CHEERS));
-      u.rate = 1;
-      u.pitch = 1.25;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }
-    catch (e) {}
-  }
-
-  function encourage()
-  {
-    try
-    {
-      if (!("speechSynthesis" in window))
-      {
-        return;
-      }
-      var u = new SpeechSynthesisUtterance(pick(TRY_AGAINS));
-      u.rate = 0.95;
-      u.pitch = 1.2;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }
-    catch (e) {}
-  }
-
   /* ---------- settings ---------- */
   function digitsOnly(el)
   {
-    el.value = el.value.replace(/[^0-9]/g, "").slice(0, 6);
+    var cleaned = el.value.replace(/[^0-9]/g, "").slice(0, LEN);
+    if (cleaned !== el.value)
+    {
+      el.value = cleaned;
+    }
+  }
+
+  function renderPinStatus()
+  {
+    pinStatus.textContent = usingDefault()
+      ? "No PIN saved yet — practising with " + DEFAULT_PIN + "."
+      : "A 6-digit PIN is saved on this device.";
   }
 
   function openSettings()
@@ -1255,6 +1617,8 @@
     pinConfirm.value = "";
     settingsMsg.textContent = "";
     settingsMsg.removeAttribute("data-ok");
+    renderPinStatus();
+    loadVoices();
     settingsEl.hidden = false;
     window.setTimeout(function () { pinInput.focus(); }, 50);
   }
@@ -1262,6 +1626,9 @@
   function closeSettings()
   {
     settingsEl.hidden = true;
+    pinInput.value = "";
+    pinConfirm.value = "";
+    settingsBtn.focus();
   }
 
   function saveSettings()
@@ -1272,28 +1639,44 @@
     if (!/^[0-9]{6}$/.test(a))
     {
       settingsMsg.textContent = "PIN must be exactly 6 digits.";
+      pinInput.focus();
       return;
     }
     if (a !== b)
     {
       settingsMsg.textContent = "The two PINs do not match.";
+      pinConfirm.focus();
       return;
     }
-    if (!setTarget(a))
+    if (!writeStored(STORE_KEY, a))
     {
       settingsMsg.textContent = "Could not save on this device.";
       return;
     }
     closeSettings();
     reset();
-    setMessage("New PIN saved — time to practice!");
-    window.setTimeout(hint, 2600);
+    flashMessage("New PIN saved — time to practise!", 2600);
+  }
+
+  function forgetPin()
+  {
+    try
+    {
+      localStorage.removeItem(STORE_KEY);
+    }
+    catch (e) {}
+    pinInput.value = "";
+    pinConfirm.value = "";
+    renderPinStatus();
+    settingsMsg.setAttribute("data-ok", "1");
+    settingsMsg.textContent = "Saved PIN removed from this device.";
+    reset();
   }
 
   /* ---------- wiring ---------- */
   keypadEl.addEventListener("click", function (e)
   {
-    var btn = e.target.closest(".key");
+    var btn = e.target.closest ? e.target.closest(".key") : null;
     if (btn)
     {
       press(btn.getAttribute("data-key"));
@@ -1308,10 +1691,77 @@
   hintBtn.addEventListener("pointerleave", peekHide);
   hintBtn.addEventListener("pointercancel", peekHide);
   hintBtn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-  window.addEventListener("blur", peekHide);
-  settingsBtn.addEventListener("click", openSettings);
+
+  // Press-and-hold gate on the gear: a curious kid tapping it gets a
+  // nudge, not the PIN editor.
+  var gearTimer = null;
+
+  function gearDown(e)
+  {
+    if (e && e.cancelable)
+    {
+      e.preventDefault();
+    }
+    window.clearTimeout(gearTimer);
+    settingsBtn.classList.add("is-holding");
+    gearTimer = window.setTimeout(function ()
+    {
+      gearTimer = null;
+      settingsBtn.classList.remove("is-holding");
+      openSettings();
+    }, HOLD_MS);
+  }
+
+  function gearUp()
+  {
+    settingsBtn.classList.remove("is-holding");
+    if (gearTimer)
+    {
+      window.clearTimeout(gearTimer);
+      gearTimer = null;
+      flashMessage("Hold the ⚙️ button to open settings");
+    }
+  }
+
+  settingsBtn.addEventListener("pointerdown", gearDown);
+  settingsBtn.addEventListener("pointerup", gearUp);
+  settingsBtn.addEventListener("pointerleave", gearUp);
+  settingsBtn.addEventListener("pointercancel", gearUp);
+  settingsBtn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  // Keyboard users get the panel straight away - preventDefault on
+  // pointerdown means no click event fires for them to rely on.
+  settingsBtn.addEventListener("keydown", function (e)
+  {
+    if (e.key === "Enter" || e.key === " ")
+    {
+      e.preventDefault();
+      openSettings();
+    }
+  });
+
   settingsCancel.addEventListener("click", closeSettings);
   settingsSave.addEventListener("click", saveSettings);
+  forgetBtn.addEventListener("click", forgetPin);
+
+  voiceSelect.addEventListener("change", function ()
+  {
+    var uri = voiceSelect.value;
+    for (var i = 0; i < voices.length; i++)
+    {
+      if (voices[i].voiceURI === uri)
+      {
+        chosenVoice = voices[i];
+        writeStored(VOICE_KEY, uri);
+        break;
+      }
+    }
+    speak("Hi! Let's practise your PIN.", 1, 1.1, false);
+  });
+
+  voiceTest.addEventListener("click", function ()
+  {
+    speak("Great job! You know your PIN!", 1, 1.15, false);
+  });
 
   settingsEl.addEventListener("click", function (e)
   {
@@ -1323,10 +1773,19 @@
 
   pinInput.addEventListener("input", function () { digitsOnly(pinInput); });
   pinConfirm.addEventListener("input", function () { digitsOnly(pinConfirm); });
+  pinInput.addEventListener("keydown", function (e)
+  {
+    if (e.key === "Enter")
+    {
+      e.preventDefault();
+      pinConfirm.focus();
+    }
+  });
   pinConfirm.addEventListener("keydown", function (e)
   {
     if (e.key === "Enter")
     {
+      e.preventDefault();
       saveSettings();
     }
   });
@@ -1345,8 +1804,13 @@
     {
       if (e.key === "Enter" || e.key === " ")
       {
+        e.preventDefault();
         reset();
       }
+      return;
+    }
+    if (e.target === settingsBtn)
+    {
       return;
     }
     if (/^[0-9]$/.test(e.key))
@@ -1360,6 +1824,21 @@
     else if (e.key === "Escape")
     {
       press("clear");
+    }
+  });
+
+  window.addEventListener("blur", function ()
+  {
+    peekHide();
+    gearUp();
+  });
+
+  document.addEventListener("visibilitychange", function ()
+  {
+    if (document.hidden)
+    {
+      peekHide();
+      stopSpeech();
     }
   });
 
@@ -1384,9 +1863,22 @@
     }
   }
 
+  if (hasSpeech())
+  {
+    loadVoices();
+    // Most browsers populate getVoices() asynchronously, so the first
+    // call above often comes back empty; this fires once they land.
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  else
+  {
+    fillVoiceSelect();
+  }
+
   paintKeys();
   buildDots();
   renderDots();
+  renderStars();
   hint();
 })();
 </script>
