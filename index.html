@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#ffd9e6">
+<meta name="theme-color" content="#ffffff">
 <title>PIN Practice</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,23 +11,18 @@
 <style>
   :root
   {
-    --bg: #fff2f7;
-    --ink: #34265a;
-    --muted: #7b6ea0;
+    --bg: #ffffff;
+    --ink: #2b2b3d;
+    --muted: #8a8aa0;
     --card: #ffffff;
-    --key-border: #ecdff0;
-    --key-shadow: #e6d5ea;
+    --key-border: #e6e6ef;
+    --key-shadow: #dcdce8;
     --accent: #2f9e6e;
     --accent-ink: #ffffff;
     --wrong: #e2574c;
     --focus: #3b82c4;
+    --title: #1d7fd6;
     --font-fun: "Baloo 2", "Fredoka", "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
-    --bg-fun:
-      radial-gradient(circle at 12% 18%, rgba(255, 191, 105, 0.35), transparent 42%),
-      radial-gradient(circle at 88% 12%, rgba(120, 200, 255, 0.35), transparent 44%),
-      radial-gradient(circle at 82% 88%, rgba(140, 232, 170, 0.38), transparent 46%),
-      radial-gradient(circle at 8% 92%, rgba(255, 138, 194, 0.35), transparent 44%),
-      linear-gradient(155deg, #fff4e6 0%, #ffe9f2 48%, #e6faf0 100%);
   }
 
   * { box-sizing: border-box; }
@@ -41,9 +36,6 @@
   body
   {
     background: var(--bg);
-    background-image: var(--bg-fun);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
     color: var(--ink);
     font-family: var(--font-fun);
     -webkit-font-smoothing: antialiased;
@@ -102,19 +94,8 @@
     font-size: clamp(1.6rem, 6.5vw, 2.1rem);
     font-weight: 800;
     letter-spacing: 0.5px;
-    color: var(--ink);
-  }
-
-  @supports ((-webkit-background-clip: text) or (background-clip: text))
-  {
-    h1
-    {
-      background: linear-gradient(92deg, #ff5d8f 0%, #ff8c42 45%, #2fb0a0 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      color: transparent;
-    }
+    color: var(--title);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
   }
 
   .icon-btn
@@ -148,9 +129,8 @@
     width: clamp(20px, 6vw, 30px);
     height: clamp(20px, 6vw, 30px);
     border-radius: 50%;
-    border: 3px solid var(--muted);
-    border-color: color-mix(in srgb, var(--muted) 60%, transparent);
-    background: rgba(255, 255, 255, 0.35);
+    border: 3px solid var(--key-border);
+    background: transparent;
     transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
   }
 
@@ -219,8 +199,8 @@
     border-radius: 24px;
     cursor: pointer;
     touch-action: manipulation;
-    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22), 0 9px 16px rgba(0, 0, 0, 0.12);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.28), 0 2px 0 rgba(0, 0, 0, 0.22);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.20), 0 9px 16px rgba(0, 0, 0, 0.12);
     transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease;
   }
 
@@ -318,13 +298,46 @@
     justify-content: center;
   }
 
-  #hintBtn
+  .peek-btn
   {
+    appearance: none;
+    border: none;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: clamp(1rem, 4.4vw, 1.2rem);
+    color: #5a3d00;
+    background: #ffd23f;
+    padding: 12px 22px;
+    border-radius: 999px;
+    cursor: pointer;
     touch-action: none;
-    border: 2px dashed var(--key-border);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 5px 0 #d9a100, 0 8px 14px rgba(0, 0, 0, 0.14);
+    transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease;
   }
 
-  #hintBtn:active { background: rgba(47, 158, 110, 0.12); }
+  .peek-btn .peek-eye { font-size: 1.25em; line-height: 1; }
+
+  .peek-btn:active
+  {
+    transform: translateY(4px) scale(0.96) rotate(-2deg);
+    box-shadow: 0 1px 0 #d9a100;
+    filter: brightness(1.05);
+  }
+
+  .peek-btn.is-peeking
+  {
+    background: #ffdf6b;
+    animation: peekWiggle 480ms ease-in-out infinite;
+  }
+
+  @keyframes peekWiggle
+  {
+    0%, 100% { transform: translateY(4px) scale(1) rotate(-3deg); }
+    50% { transform: translateY(4px) scale(1.04) rotate(3deg); }
+  }
 
   [hidden] { display: none !important; }
 
@@ -510,19 +523,14 @@
   {
     :root
     {
-      --bg: #201a33;
-      --ink: #f2eefc;
-      --muted: #b3a9d4;
-      --card: #2f2745;
-      --key-border: #443a5f;
-      --key-shadow: #16111f;
+      --bg: #1b1b24;
+      --ink: #f1f1f8;
+      --muted: #a6a6bd;
+      --card: #2a2a38;
+      --key-border: #3c3c4e;
+      --key-shadow: #131319;
       --focus: #6ea8e0;
-      --bg-fun:
-        radial-gradient(circle at 12% 16%, rgba(255, 150, 90, 0.20), transparent 42%),
-        radial-gradient(circle at 88% 12%, rgba(110, 170, 255, 0.20), transparent 44%),
-        radial-gradient(circle at 82% 90%, rgba(120, 220, 170, 0.18), transparent 46%),
-        radial-gradient(circle at 8% 92%, rgba(255, 120, 190, 0.20), transparent 44%),
-        linear-gradient(155deg, #241a3a 0%, #1c2444 50%, #163030 100%);
+      --title: #63b3f2;
     }
     .key--action:active { background: #3a3157; }
     .celebrate { background: rgba(29, 35, 51, 0.85); }
@@ -611,6 +619,7 @@
     }
 
     .restart--ghost { font-size: 0.9rem; padding: 6px 12px; }
+    .peek-btn { font-size: 0.95rem; padding: 8px 16px; }
 
     .celebrate__card, .modal__card
     {
@@ -626,7 +635,7 @@
 
   @media (prefers-reduced-motion: reduce)
   {
-    .key--pop, .echo--go, .celebrate__emoji, .celebrate__card { animation: none !important; }
+    .key--pop, .echo--go, .celebrate__emoji, .celebrate__card, .peek-btn.is-peeking { animation: none !important; }
     .echo { opacity: 0 !important; }
   }
 </style>
@@ -663,7 +672,7 @@
   </div>
 
   <div class="footer-actions">
-    <button id="hintBtn" class="restart restart--ghost" type="button" aria-label="Hold to peek at the PIN">👁 Hold to peek</button>
+    <button id="hintBtn" class="peek-btn" type="button" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">👀</span> Peek</button>
     <button id="restartBtn" class="restart restart--ghost" type="button">Start over</button>
   </div>
 </main>
@@ -726,8 +735,8 @@
   var peeking = false;
 
   var DIGIT_COLORS = [
-    "#ff6b6b", "#ffa931", "#ffd23f", "#5ec26a", "#2ec4b6",
-    "#4d96ff", "#9b6bff", "#ff6bcb", "#ff8c42", "#33c1b1"
+    "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
+    "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#65a30d"
   ];
   var NUM_WORDS = [
     "zero", "one", "two", "three", "four",
@@ -855,6 +864,7 @@
       }
     }
     dotsEl.classList.add("dots--peek");
+    hintBtn.classList.add("is-peeking");
   }
 
   function peekHide()
@@ -865,6 +875,7 @@
     }
     peeking = false;
     dotsEl.classList.remove("dots--peek");
+    hintBtn.classList.remove("is-peeking");
     hint();
   }
 
