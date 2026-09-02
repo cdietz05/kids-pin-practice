@@ -968,6 +968,11 @@
      the settings hold-gate: dropping back a level when a child is
      struggling has to be quick, and unlike the PIN there is nothing
      here worth protecting. */
+  /* Above .modal's own 9500: the picker can be opened from inside
+     Settings, and equal z-index would leave it painted behind, since
+     Settings comes later in the document. */
+  #levelPicker { z-index: 9600; }
+
   .level-list
   {
     display: flex;
@@ -1027,8 +1032,11 @@
   /* ---------- settings sections ---------- */
   .section
   {
-    margin: 0 0 6px;
-    padding-top: 16px;
+    /* The top margin is what separates the rule from whatever sits
+       above it - the border is drawn at the element's very top edge, so
+       without this it lands right on the buttons of the section before. */
+    margin: 26px 0 8px;
+    padding-top: 18px;
     border-top: 2px solid var(--key-border);
     font-size: 0.78rem;
     font-weight: 800;
@@ -1037,7 +1045,7 @@
     color: var(--muted);
   }
 
-  .section:first-of-type { padding-top: 0; border-top: none; }
+  .section:first-of-type { margin-top: 6px; padding-top: 0; border-top: none; }
 
   @media (prefers-color-scheme: dark)
   {
@@ -1734,6 +1742,16 @@
   function closeLevelPicker()
   {
     levelPickerEl.hidden = true;
+    // Hand focus back to whatever opened it - Settings stays open
+    // underneath when it was reached from there.
+    if (!settingsEl.hidden)
+    {
+      openLevelsBtn.focus();
+    }
+    else
+    {
+      chipEl.focus();
+    }
     touchIdle();
     updateGuide();
   }
@@ -3230,19 +3248,21 @@
 
   document.addEventListener("keydown", function (e)
   {
-    if (!settingsEl.hidden)
-    {
-      if (e.key === "Escape")
-      {
-        closeSettings();
-      }
-      return;
-    }
+    // Picker first: it stacks ON TOP of Settings, so Escape has to
+    // dismiss it rather than the panel underneath it.
     if (!levelPickerEl.hidden)
     {
       if (e.key === "Escape")
       {
         closeLevelPicker();
+      }
+      return;
+    }
+    if (!settingsEl.hidden)
+    {
+      if (e.key === "Escape")
+      {
+        closeSettings();
       }
       return;
     }
