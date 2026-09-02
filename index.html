@@ -769,6 +769,12 @@
     "Perfect! You remembered your PIN!",
     "Woo hoo! Nice job!"
   ];
+  var TRY_AGAINS = [
+    "So close! Give it another try.",
+    "Almost! You can do it. Try again.",
+    "Nice try! Let's do it one more time.",
+    "Don't give up! Try again."
+  ];
 
   function pick(arr)
   {
@@ -1060,6 +1066,7 @@
     renderDots("wrong");
     dotsEl.classList.add("shake");
     setMessage("Almost! Try again 💪");
+    encourage();
     window.setTimeout(function ()
     {
       dotsEl.classList.remove("shake");
@@ -1213,6 +1220,23 @@
       var u = new SpeechSynthesisUtterance(pick(CHEERS));
       u.rate = 1;
       u.pitch = 1.25;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+    catch (e) {}
+  }
+
+  function encourage()
+  {
+    try
+    {
+      if (!("speechSynthesis" in window))
+      {
+        return;
+      }
+      var u = new SpeechSynthesisUtterance(pick(TRY_AGAINS));
+      u.rate = 0.95;
+      u.pitch = 1.2;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     }
