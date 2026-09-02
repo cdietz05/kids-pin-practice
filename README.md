@@ -100,11 +100,16 @@ The page uses the browser's built-in `speechSynthesis`. Quality varies a lot
 by device, so rather than take whatever voice is listed first it:
 
 1. keeps only voices for the chosen language,
-2. ranks the preferred locale first — **en-US** for English, es-US → es-MX →
-   es-419 → any Spanish — so the numbers come out in the accent the child
-   hears at home,
-3. then prefers the neural / "Natural" / Premium / cloud-backed ones over the
+2. takes a **named favourite** if the device has one — **Samantha (en-US)** on
+   iOS and macOS, Paulina/Mónica for Spanish,
+3. otherwise ranks the preferred locale first — **en-US** for English, es-US →
+   es-MX → es-419 → any Spanish — so the numbers come out in the accent the
+   child hears at home,
+4. then prefers the neural / "Natural" / Premium / cloud-backed ones over the
    robotic fallbacks.
+
+No platform sniffing is involved: on Android and Windows those names simply
+aren't in the list, so the scoring takes over.
 
 A grown-up can override the pick under **Voice** in Settings (with a **Test**
 button); the choice is remembered per language.

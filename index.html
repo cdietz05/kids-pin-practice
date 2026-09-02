@@ -1432,6 +1432,16 @@
     es: ["es-us", "es-mx", "es-419", "es"]
   };
 
+  // Named voices to reach for first, before any scoring, when one exists
+  // in the preferred locale. Samantha is the warm en-US default on iOS
+  // and macOS and is what this should sound like on an iPhone or iPad;
+  // no platform sniffing is needed, because on Android and Windows these
+  // names simply are not in the list and the scoring takes over.
+  var PREFERRED_VOICE_NAMES = {
+    en: ["samantha"],
+    es: ["paulina", "mónica", "monica"]
+  };
+
   var uiLang = "en";
 
   function T()
@@ -2289,6 +2299,58 @@
     return prefs.length;
   }
 
+  function isPreferredName(v)
+  {
+    var names = PREFERRED_VOICE_NAMES[uiLang] || [];
+    var name = (v && v.name ? v.name : "").toLowerCase();
+    for (var i = 0; i < names.length; i++)
+    {
+      if (name.indexOf(names[i]) !== -1)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // The named favourite for this language if the device actually has
+  // it, taking the best locale it comes in. Names are tried in order, so
+  // the first entry wins when several are installed; within one name the
+  // closest locale wins, then the exact spelling over a variant such as
+  // "Samantha (Enhanced)".
+  function findPreferredVoice(list)
+  {
+    var names = PREFERRED_VOICE_NAMES[uiLang] || [];
+    for (var n = 0; n < names.length; n++)
+    {
+      var best = null;
+      var bestRank = 99;
+      var bestExact = false;
+      for (var i = 0; i < list.length; i++)
+      {
+        var v = list[i];
+        var name = (v.name || "").toLowerCase();
+        if (name.indexOf(names[n]) === -1)
+        {
+          continue;
+        }
+        var rank = localeRank(v);
+        var exact = name === names[n];
+        if (rank < bestRank || (rank === bestRank && exact && !bestExact))
+        {
+          best = v;
+          bestRank = rank;
+          bestExact = exact;
+        }
+      }
+      if (best)
+      {
+        return best;
+      }
+    }
+    return null;
+  }
+
   function voiceScore(v)
   {
     if (!v)
@@ -2303,7 +2365,10 @@
     if (name.indexOf("google") !== -1) { s += 35; }
     if (name.indexOf("siri") !== -1) { s += 30; }
     if (name.indexOf("online") !== -1) { s += 25; }
-    if (/samantha|aria|jenny|ava|allison|nicky|zoe|serena|paulina|m[oó]nica|luc[ií]a|elena|dalia|jorge|juan/.test(name)) { s += 18; }
+    // A named favourite also sorts to the top of the Settings list, so
+    // the picker agrees with what is actually being used.
+    if (isPreferredName(v)) { s += 65; }
+    if (/aria|jenny|ava|allison|nicky|zoe|serena|luc[ií]a|elena|dalia|jorge|juan/.test(name)) { s += 18; }
     if (/compact|espeak|pico|novelty|whisper|bells|organ|zarvox|trinoids|bubbles|cellos|bahh/.test(name)) { s -= 70; }
     if (v.localService === false) { s += 10; }
     if (v.default) { s += 2; }
@@ -2359,9 +2424,12 @@
         }
       }
     }
+    // No explicit choice from a grown-up: take the named favourite for
+    // this language if the device has it (Samantha en-US on iOS/macOS),
+    // otherwise the best-scoring voice.
     if (!chosenVoice)
     {
-      chosenVoice = voices[0] || null;
+      chosenVoice = findPreferredVoice(voices) || voices[0] || null;
     }
     fillVoiceSelect();
   }
