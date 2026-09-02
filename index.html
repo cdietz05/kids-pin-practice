@@ -179,31 +179,76 @@
   .key
   {
     appearance: none;
-    border: 2px solid var(--key-border);
-    background: var(--card);
-    color: var(--ink);
+    border: none;
+    background: var(--kc, var(--card));
+    color: #fff;
     font-family: inherit;
-    font-weight: 800;
-    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    font-weight: 900;
+    font-size: clamp(1.9rem, 7.5vw, 2.8rem);
     aspect-ratio: 1 / 1;
-    border-radius: 22px;
+    border-radius: 24px;
     cursor: pointer;
     touch-action: manipulation;
-    box-shadow: 0 5px 0 var(--key-shadow);
-    transition: transform 80ms ease, box-shadow 80ms ease, background-color 80ms ease;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22), 0 9px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease;
   }
 
   .key:active
   {
-    transform: translateY(4px);
-    box-shadow: 0 1px 0 var(--key-shadow);
-    background: #f3ffe9;
+    transform: translateY(5px) scale(0.97);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+    filter: brightness(1.12) saturate(1.1);
   }
 
   .key--action
   {
-    font-size: clamp(1rem, 4.4vw, 1.3rem);
+    background: var(--card);
     color: var(--muted);
+    font-weight: 800;
+    font-size: clamp(1rem, 4.4vw, 1.4rem);
+    text-shadow: none;
+    border: 2px solid var(--key-border);
+    box-shadow: 0 5px 0 var(--key-shadow);
+  }
+
+  .key--action:active { filter: none; background: #f3ffe9; }
+
+  @keyframes keyPop
+  {
+    0% { transform: translateY(0) scale(1); }
+    25% { transform: translateY(4px) scale(0.9); }
+    55% { transform: translateY(-7px) scale(1.09); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  .key--pop { animation: keyPop 320ms ease; }
+
+  .echo
+  {
+    position: fixed;
+    left: 50%;
+    top: 34%;
+    transform: translate(-50%, -50%) scale(0.4);
+    font-family: inherit;
+    font-weight: 900;
+    font-size: clamp(5rem, 32vw, 13rem);
+    line-height: 1;
+    color: var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 8000;
+    text-shadow: 0 8px 0 rgba(0, 0, 0, 0.12);
+  }
+
+  .echo--go { animation: echoPop 560ms ease forwards; }
+
+  @keyframes echoPop
+  {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-10deg); }
+    28% { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(5deg); }
+    60% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
   }
 
   .restart
@@ -443,7 +488,7 @@
       --key-shadow: #161b28;
       --focus: #6ea8e0;
     }
-    .key:active { background: #313a52; }
+    .key--action:active { background: #313a52; }
     .celebrate { background: rgba(29, 35, 51, 0.85); }
   }
 
@@ -486,13 +531,14 @@
     {
       aspect-ratio: auto;
       height: clamp(40px, 12.5vh, 64px);
-      font-size: clamp(1.15rem, 5.5vh, 1.9rem);
-      border-radius: 14px;
-      box-shadow: 0 4px 0 var(--key-shadow);
+      font-size: clamp(1.3rem, 6vh, 2rem);
+      border-radius: 16px;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
     }
 
-    .key:active { box-shadow: 0 1px 0 var(--key-shadow); }
-    .key--action { font-size: clamp(0.8rem, 3.4vh, 1.1rem); }
+    .key:active { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22); }
+    .key--action { font-size: clamp(0.8rem, 3.4vh, 1.1rem); box-shadow: 0 4px 0 var(--key-shadow); }
+    .echo { font-size: clamp(4rem, 22vh, 9rem); top: 44%; }
 
     .dot { width: clamp(15px, 3.4vh, 22px); height: clamp(15px, 3.4vh, 22px); }
     .dot__num { top: calc(100% + 12px); font-size: clamp(1rem, 4.6vh, 1.4rem); }
@@ -518,6 +564,12 @@
     .celebrate__card h2 { font-size: 1.4rem; margin-top: 8px; }
     .celebrate__card p { font-size: 1rem; margin-bottom: 14px; }
   }
+
+  @media (prefers-reduced-motion: reduce)
+  {
+    .key--pop, .echo--go, .celebrate__emoji, .celebrate__card { animation: none !important; }
+    .echo { opacity: 0 !important; }
+  }
 </style>
 </head>
 <body>
@@ -533,6 +585,8 @@
     <div id="dots" class="dots" role="img" aria-label="PIN entry progress"></div>
     <p id="message" class="message" aria-live="polite"></p>
   </div>
+
+  <div id="echo" class="echo" aria-hidden="true"></div>
 
   <div id="keypad" class="keypad">
     <button class="key" type="button" data-key="1">1</button>
@@ -593,6 +647,7 @@
 
   var dotsEl = document.getElementById("dots");
   var msgEl = document.getElementById("message");
+  var echoEl = document.getElementById("echo");
   var keypadEl = document.getElementById("keypad");
   var restartBtn = document.getElementById("restartBtn");
   var hintBtn = document.getElementById("hintBtn");
@@ -610,6 +665,15 @@
   var entry = "";
   var locked = false;
   var peeking = false;
+
+  var DIGIT_COLORS = [
+    "#ff6b6b", "#ffa931", "#ffd23f", "#5ec26a", "#2ec4b6",
+    "#4d96ff", "#9b6bff", "#ff6bcb", "#ff8c42", "#33c1b1"
+  ];
+  var NUM_WORDS = [
+    "zero", "one", "two", "three", "four",
+    "five", "six", "seven", "eight", "nine"
+  ];
 
   var WIN_LINES = [
     "You know your PIN!",
@@ -745,6 +809,94 @@
     hint();
   }
 
+  /* ---------- toddler feedback ---------- */
+  var audioCtx = null;
+
+  function ac()
+  {
+    try
+    {
+      if (!audioCtx)
+      {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC)
+        {
+          audioCtx = new AC();
+        }
+      }
+      if (audioCtx && audioCtx.state === "suspended")
+      {
+        audioCtx.resume();
+      }
+    }
+    catch (e) {}
+    return audioCtx;
+  }
+
+  function blip(digit)
+  {
+    var c = ac();
+    if (!c)
+    {
+      return;
+    }
+    try
+    {
+      var osc = c.createOscillator();
+      var gain = c.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 330 + Number(digit) * 45;
+      var t = c.currentTime;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t);
+      osc.stop(t + 0.24);
+    }
+    catch (e) {}
+  }
+
+  function sayDigit(digit)
+  {
+    try
+    {
+      if (!("speechSynthesis" in window))
+      {
+        return;
+      }
+      var word = NUM_WORDS[Number(digit)] || String(digit);
+      var u = new SpeechSynthesisUtterance(word);
+      u.rate = 0.95;
+      u.pitch = 1.35;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+    catch (e) {}
+  }
+
+  function bumpKey(key)
+  {
+    var b = keypadEl.querySelector('.key[data-key="' + key + '"]');
+    if (!b)
+    {
+      return;
+    }
+    b.classList.remove("key--pop");
+    void b.offsetWidth;
+    b.classList.add("key--pop");
+  }
+
+  function echoDigit(digit)
+  {
+    echoEl.textContent = digit;
+    echoEl.style.color = DIGIT_COLORS[Number(digit)] || "var(--accent)";
+    echoEl.classList.remove("echo--go");
+    void echoEl.offsetWidth;
+    echoEl.classList.add("echo--go");
+  }
+
   function press(key)
   {
     if (locked)
@@ -753,6 +905,7 @@
     }
     if (key === "back")
     {
+      bumpKey("back");
       entry = entry.slice(0, -1);
       renderDots();
       if (!entry)
@@ -763,6 +916,7 @@
     }
     if (key === "clear")
     {
+      bumpKey("clear");
       entry = "";
       renderDots();
       hint();
@@ -772,6 +926,7 @@
     {
       return;
     }
+    bumpKey(key);
     if (entry.length >= LEN)
     {
       return;
@@ -779,6 +934,9 @@
     entry += key;
     setMessage("");
     renderDots();
+    echoDigit(key);
+    sayDigit(key);
+    blip(key);
     if (entry.length === LEN)
     {
       evaluate();
@@ -1088,6 +1246,20 @@
     }
   });
 
+  function paintKeys()
+  {
+    var keys = keypadEl.querySelectorAll(".key[data-key]");
+    for (var i = 0; i < keys.length; i++)
+    {
+      var k = keys[i].getAttribute("data-key");
+      if (/^[0-9]$/.test(k))
+      {
+        keys[i].style.setProperty("--kc", DIGIT_COLORS[Number(k)]);
+      }
+    }
+  }
+
+  paintKeys();
   buildDots();
   renderDots();
   hint();

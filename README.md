@@ -2,7 +2,9 @@
 
 A touch-friendly single-page tool for helping a kid memorize a 6-digit PIN.
 
-- Big, touch-enabled number pad that works on phones and tablets.
+- Big, touch-enabled number pad that works on phones and tablets. Each digit
+  is its own bright color, pops when pressed, flashes large on screen, and is
+  spoken aloud ("three!") with a little blip.
 - A parent sets the target PIN behind the **⚙️** settings icon. The PIN is
   stored only in that browser (`localStorage`) and is never shown on screen.
 - When the child types a 6-digit PIN that matches, the screen throws confetti,
