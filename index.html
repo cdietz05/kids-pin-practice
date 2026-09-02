@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; worker-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1b24" media="(prefers-color-scheme: dark)">
 <meta name="description" content="A big, friendly keypad for helping a child learn a 6-digit PIN.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +14,10 @@
 <meta name="apple-mobile-web-app-title" content="PIN Practice">
 <title>PIN Practice</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<!-- iOS ignores SVG apple-touch-icons and falls back to a screenshot of
+     the page, so Add to Home Screen needs a real PNG. -->
+<link rel="apple-touch-icon" href="icon-180.png" sizes="180x180">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1562,17 +1566,49 @@
     return !settingsEl.hidden || !celebrateEl.hidden || !levelPickerEl.hidden;
   }
 
-  /* ---------- storage ---------- */
-  function readStored(key)
+  // Takes the keypad out of the tab order and away from screen readers
+  // while a dialog is up. Without it Tab walks straight out of the
+  // dialog and starts pressing digits behind the overlay. Must run
+  // BEFORE any focus() that targets something inside main, or the focus
+  // silently goes nowhere.
+  var appEl = document.querySelector("main.app");
+
+  function syncInert()
   {
     try
     {
-      return localStorage.getItem(key);
+      appEl.inert = anyModalOpen();
+    }
+    catch (e) {}
+  }
+
+  /* ---------- storage ----------
+     Memoised, because these are read from hot paths: every keypress
+     consults the sound, hint, level and target-PIN keys, and each raw
+     localStorage read is a synchronous trip out of the JS heap. This is
+     the only writer, so the cache cannot go stale from inside the page;
+     another tab editing the same origin would be missed, which does not
+     apply here (a second tab of a practice keypad is not a scenario
+     worth invalidating for). */
+  var storeCache = Object.create(null);
+
+  function readStored(key)
+  {
+    if (key in storeCache)
+    {
+      return storeCache[key];
+    }
+    var v = null;
+    try
+    {
+      v = localStorage.getItem(key);
     }
     catch (e)
     {
-      return null;
+      v = null;
     }
+    storeCache[key] = v;
+    return v;
   }
 
   function writeStored(key, value)
@@ -1580,12 +1616,27 @@
     try
     {
       localStorage.setItem(key, value);
+      storeCache[key] = value;
       return true;
     }
     catch (e)
     {
+      // Deliberately not cached on failure: saveSettings reports "could
+      // not save on this device" off this return value, and that message
+      // has to stay true rather than the PIN quietly working anyway
+      // until the tab closes.
       return false;
     }
+  }
+
+  function removeStored(key)
+  {
+    try
+    {
+      localStorage.removeItem(key);
+    }
+    catch (e) {}
+    storeCache[key] = null;
   }
 
   function getTarget()
@@ -1780,13 +1831,17 @@
     {
       return;
     }
-    writeStored(INSTALL_NUDGE_KEY, "seen");
     window.setTimeout(function ()
     {
-      if (!anyModalOpen())
+      // Only spend the one-and-only showing if it can actually be read -
+      // marking it seen up front burned it whenever a panel happened to
+      // be open when the timer fired.
+      if (anyModalOpen() || readStored(INSTALL_NUDGE_KEY) === "seen")
       {
-        flashMessage(T().installNudge, 5200);
+        return;
       }
+      writeStored(INSTALL_NUDGE_KEY, "seen");
+      flashMessage(T().installNudge, 5200);
     }, 2500);
   }
 
@@ -1818,7 +1873,23 @@
   // temptation.
   function applyLevelUi()
   {
-    hintBtn.hidden = !peekAvailable();
+    var show = peekAvailable();
+    if (hintBtn.hidden === show)
+    {
+      hintBtn.hidden = !show;
+      // Levelling into 4 used to leave the glance/blink timers running
+      // forever against a display:none button; levelling back down left
+      // the eyes frozen.
+      if (show)
+      {
+        moveEyes(true);
+        startEyes();
+      }
+      else
+      {
+        stopEyes();
+      }
+    }
   }
 
   /* ---------- level picker ---------- */
@@ -1856,6 +1927,7 @@
     clearGuide();
     clearIdleHint();
     levelPickerEl.hidden = false;
+    syncInert();
     window.setTimeout(function ()
     {
       var card = levelPickerEl.querySelector(".modal__card");
@@ -1869,6 +1941,7 @@
   function closeLevelPicker()
   {
     levelPickerEl.hidden = true;
+    syncInert();
     // Hand focus back to whatever opened it - Settings stays open
     // underneath when it was reached from there.
     if (!settingsEl.hidden)
@@ -2969,6 +3042,7 @@
     renderChip();
     applyLevelUi();
     celebrateEl.hidden = false;
+    syncInert();
     // One burst, not two: the pieces already spawn at staggered heights
     // above the viewport, so a second wave 450ms later only doubled the
     // fill cost for the same look.
@@ -2988,6 +3062,7 @@
     entry = "";
     locked = false;
     celebrateEl.hidden = true;
+    syncInert();
     stopSpeech();
     stopConfetti();
     applyLevelUi();
@@ -3162,6 +3237,7 @@
     clearIdleHint();
     clearGuide();
     settingsEl.hidden = false;
+    syncInert();
     // Focus the dialog itself, NOT the PIN field: focusing a text input
     // throws the soft keyboard up the moment the panel opens, which
     // covers the settings below it. Focus still lands inside the dialog
@@ -3182,6 +3258,7 @@
     settingsEl.hidden = true;
     pinInput.value = "";
     pinConfirm.value = "";
+    syncInert();
     settingsBtn.focus();
     touchIdle();
     updateGuide();
@@ -3216,11 +3293,7 @@
 
   function forgetPin()
   {
-    try
-    {
-      localStorage.removeItem(STORE_KEY);
-    }
-    catch (e) {}
+    removeStored(STORE_KEY);
     pinInput.value = "";
     pinConfirm.value = "";
     renderPinStatus();
@@ -3309,21 +3382,28 @@
     }, HOLD_MS);
   }
 
-  function gearUp()
+  // silent: cancel the hold without the "hold it down" nudge - used when
+  // the window simply lost focus, which is not the user letting go early.
+  function gearUp(silent)
   {
     settingsBtn.classList.remove("is-holding");
     if (gearTimer)
     {
       window.clearTimeout(gearTimer);
       gearTimer = null;
-      flashMessage(T().holdGear);
+      if (silent !== true)
+      {
+        flashMessage(T().holdGear);
+      }
     }
   }
 
+  function gearRelease() { gearUp(false); }
+
   settingsBtn.addEventListener("pointerdown", gearDown);
-  settingsBtn.addEventListener("pointerup", gearUp);
-  settingsBtn.addEventListener("pointerleave", gearUp);
-  settingsBtn.addEventListener("pointercancel", gearUp);
+  settingsBtn.addEventListener("pointerup", gearRelease);
+  settingsBtn.addEventListener("pointerleave", gearRelease);
+  settingsBtn.addEventListener("pointercancel", gearRelease);
   settingsBtn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
   // Keyboard users get the panel straight away - preventDefault on
   // pointerdown means no click event fires for them to rely on.
@@ -3493,7 +3573,7 @@
   window.addEventListener("blur", function ()
   {
     peekHide();
-    gearUp();
+    gearUp(true);
   });
 
   document.addEventListener("visibilitychange", function ()

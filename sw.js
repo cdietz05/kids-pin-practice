@@ -14,11 +14,14 @@
  *
  * Bump CACHE_NAME whenever the precache list changes.
  */
-var CACHE_NAME = "pin-practice-v1";
+var CACHE_NAME = "pin-practice-v2";
 var PRECACHE = [
   "./",
   "./index.html",
   "./icon.svg",
+  "./icon-180.png",
+  "./icon-192.png",
+  "./icon-512.png",
   "./manifest.webmanifest"
 ];
 
@@ -76,11 +79,17 @@ self.addEventListener("fetch", function (event)
     event.respondWith(
       fetch(request).then(function (response)
       {
-        var copy = response.clone();
-        caches.open(CACHE_NAME).then(function (cache)
+        // Only a real page replaces the cached one - without the ok
+        // check a 404 or an error page would be stored as index.html and
+        // then served offline forever after.
+        if (response && response.ok)
         {
-          cache.put("./index.html", copy);
-        });
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function (cache)
+          {
+            cache.put("./index.html", copy);
+          });
+        }
         return response;
       }).catch(function ()
       {

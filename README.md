@@ -75,7 +75,8 @@ what you want on a kid's tablet.
   the offer appears where it belongs instead of as a bar over the keypad.
 - **iPhone / iPad** — Safari has no install API at all; nothing can trigger it
   from script. Settings shows the instructions instead: **Share → Add to Home
-  Screen**.
+  Screen**. (iOS ignores SVG `apple-touch-icon`s and would otherwise use a
+  screenshot of the page, so there's a real 180px PNG for it.)
 
 Either way, a one-time line on the main screen mentions that it can be
 installed, so a grown-up who never opens Settings still finds out.
