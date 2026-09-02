@@ -644,6 +644,11 @@
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   }
 
+  /* The card takes focus when the panel opens (see openSettings) purely
+     to move the reading position into the dialog - it is not an
+     interactive control, so it gets no focus ring of its own. */
+  .modal__card:focus { outline: none; }
+
   .modal__card h2 { margin: 0 0 6px; font-size: 1.4rem; }
 
   .modal__card > p
@@ -975,7 +980,7 @@
 </div>
 
 <div id="settings" class="modal" hidden>
-  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" tabindex="-1">
     <h2 id="settingsTitle" data-i18n="settingsTitle">Grown-up Settings</h2>
     <p data-i18n="settingsIntro">Set the 6-digit PIN to practise. It is never shown on this screen.</p>
 
@@ -2287,7 +2292,19 @@
     loadVoices();
     clearIdleHint();
     settingsEl.hidden = false;
-    window.setTimeout(function () { pinInput.focus(); }, 50);
+    // Focus the dialog itself, NOT the PIN field: focusing a text input
+    // throws the soft keyboard up the moment the panel opens, which
+    // covers the language / voice / hint settings below it. Focus still
+    // lands inside the dialog so keyboard and screen-reader users are
+    // taken there; the field is one Tab (or one tap) away.
+    window.setTimeout(function ()
+    {
+      var card = settingsEl.querySelector(".modal__card");
+      if (card)
+      {
+        card.focus();
+      }
+    }, 50);
   }
 
   function closeSettings()
