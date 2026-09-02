@@ -651,7 +651,12 @@
 
   .modal__card h2 { margin: 0 0 6px; font-size: 1.4rem; }
 
-  .modal__card > p
+  /* Plain intro paragraphs only. Without :not([class]) this outranks
+     .section / .status-line / .fine-print on specificity (a class plus
+     an element beats a bare class), which was quietly overwriting their
+     margins - that is why the section divider sat flush on the buttons
+     above it however much margin .section asked for. */
+  .modal__card > p:not([class])
   {
     margin: 0 0 16px;
     color: var(--muted);
