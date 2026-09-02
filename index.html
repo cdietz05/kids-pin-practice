@@ -766,9 +766,9 @@
 <main class="app">
   <div class="panel">
     <header>
-      <h1>PIN Practice</h1>
+      <h1 data-i18n="title">PIN Practice</h1>
       <p id="stars" class="stars" aria-live="polite"></p>
-      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings">&#9881;&#65039;</button>
+      <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings">&#9881;&#65039;</button>
     </header>
 
     <div id="dots" class="dots" role="img" aria-label="No digits entered yet"></div>
@@ -787,60 +787,65 @@
     <button class="key" type="button" data-key="7">7</button>
     <button class="key" type="button" data-key="8">8</button>
     <button class="key" type="button" data-key="9">9</button>
-    <button class="key key--action" type="button" data-key="clear" aria-label="Clear all">Clear</button>
+    <button class="key key--action" type="button" data-key="clear" data-i18n="clearKey" data-i18n-aria="clearAria" aria-label="Clear all">Clear</button>
     <button class="key" type="button" data-key="0">0</button>
-    <button class="key key--action" type="button" data-key="back" aria-label="Delete last digit">&#9003;</button>
+    <button class="key key--action" type="button" data-key="back" data-i18n-aria="backAria" aria-label="Delete last digit">&#9003;</button>
   </div>
 
   <div class="footer-actions">
-    <button id="hintBtn" class="peek-btn" type="button" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">&#128064;</span> Peek</button>
-    <button id="restartBtn" class="restart restart--ghost" type="button">Start over</button>
+    <button id="hintBtn" class="peek-btn" type="button" data-i18n-aria="peekAria" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">&#128064;</span><span data-i18n="peek">Peek</span></button>
+    <button id="restartBtn" class="restart restart--ghost" type="button" data-i18n="startOver">Start over</button>
   </div>
 </main>
 
 <div id="celebrate" class="celebrate" hidden>
   <div class="celebrate__card" role="dialog" aria-modal="true" aria-labelledby="celebrateTitle">
     <div class="celebrate__emoji" aria-hidden="true">&#127881;</div>
-    <h2 id="celebrateTitle">YOU DID IT!</h2>
+    <h2 id="celebrateTitle" data-i18n="youDidIt">YOU DID IT!</h2>
     <p id="celebrateLine">You know your PIN!</p>
-    <button id="againBtn" class="restart" type="button">Practice Again</button>
+    <button id="againBtn" class="restart" type="button" data-i18n="practiceAgain">Practice Again</button>
   </div>
 </div>
 
 <div id="settings" class="modal" hidden>
   <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <h2 id="settingsTitle">Grown-up Settings</h2>
-    <p>Set the 6-digit PIN to practise. It is never shown on this screen.</p>
+    <h2 id="settingsTitle" data-i18n="settingsTitle">Grown-up Settings</h2>
+    <p data-i18n="settingsIntro">Set the 6-digit PIN to practise. It is never shown on this screen.</p>
 
     <p id="pinStatus" class="status-line"></p>
 
-    <label for="pinInput">New PIN
+    <label for="pinInput"><span data-i18n="newPin">New PIN</span>
       <input id="pinInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="------">
     </label>
-    <label for="pinConfirm">Confirm PIN
+    <label for="pinConfirm"><span data-i18n="confirmPin">Confirm PIN</span>
       <input id="pinConfirm" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="------">
     </label>
 
-    <label for="voiceSelect">Voice
+    <label for="langSelect"><span data-i18n="language">Language</span>
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="es">Espa&ntilde;ol</option>
+      </select>
+    </label>
+
+    <label for="voiceSelect"><span data-i18n="voice">Voice</span>
       <select id="voiceSelect"></select>
     </label>
 
     <p id="settingsMsg" class="settings-msg" aria-live="polite"></p>
 
     <div class="modal__actions">
-      <button id="voiceTest" class="btn btn--ghost btn--spacer" type="button">&#128266; Test</button>
-      <button id="settingsCancel" class="btn btn--ghost" type="button">Cancel</button>
-      <button id="settingsSave" class="btn" type="button">Save PIN</button>
+      <button id="voiceTest" class="btn btn--ghost btn--spacer" type="button">&#128266; <span data-i18n="test">Test</span></button>
+      <button id="settingsCancel" class="btn btn--ghost" type="button" data-i18n="cancel">Cancel</button>
+      <button id="settingsSave" class="btn" type="button" data-i18n="savePin">Save PIN</button>
     </div>
 
-    <p class="fine-print">
-      The PIN is kept in this browser's local storage on this device only &mdash;
-      it is never sent anywhere, but it is not encrypted, so use
-      <strong>Forget PIN</strong> on a shared or borrowed device.
+    <p class="fine-print" data-i18n="finePrint">
+      The PIN is kept in this browser's local storage on this device only, it is never sent anywhere, but it is not encrypted, so use Forget PIN on a shared or borrowed device.
     </p>
 
     <div class="modal__actions" style="margin-top: 12px;">
-      <button id="forgetBtn" class="btn btn--danger" type="button">Forget PIN</button>
+      <button id="forgetBtn" class="btn btn--danger" type="button" data-i18n="forgetPin">Forget PIN</button>
     </div>
   </div>
 </div>
@@ -851,10 +856,150 @@
   "use strict";
 
   var STORE_KEY = "pinPractice.target.v1";
-  var VOICE_KEY = "pinPractice.voice.v1";
+  var LANG_KEY = "pinPractice.lang.v1";
+  var VOICE_KEY_PREFIX = "pinPractice.voice.";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
   var HOLD_MS = 800;
+
+  /* ---------- copy, per language ----------
+     Every visible string and every spoken line lives here so a language
+     switch changes the whole app, not just the voice. Add a language by
+     adding a block plus an <option> in the Language select. */
+  var STRINGS = {
+    en: {
+      htmlLang: "en-US",
+      title: "PIN Practice",
+      gearLabel: "Grown-up settings (press and hold)",
+      clearKey: "Clear",
+      clearAria: "Clear all",
+      backAria: "Delete last digit",
+      peek: "Peek",
+      peekAria: "Hold to peek at the PIN",
+      startOver: "Start over",
+      practiceAgain: "Practice Again",
+      youDidIt: "YOU DID IT!",
+      settingsTitle: "Grown-up Settings",
+      settingsIntro: "Set the 6-digit PIN to practise. It is never shown on this screen.",
+      newPin: "New PIN",
+      confirmPin: "Confirm PIN",
+      language: "Language",
+      voice: "Voice",
+      test: "Test",
+      cancel: "Cancel",
+      savePin: "Save PIN",
+      forgetPin: "Forget PIN",
+      finePrint: "The PIN is kept in this browser's local storage on this device only — it is never sent anywhere, but it is not encrypted, so use Forget PIN on a shared or borrowed device.",
+      statusSaved: "A 6-digit PIN is saved on this device.",
+      statusNone: "No PIN saved yet — practising with " + DEFAULT_PIN + ".",
+      hintSetPin: "Hold ⚙️ to set the PIN",
+      holdGear: "Hold the ⚙️ button to open settings",
+      onePeek: "One peek per try — you can do it!",
+      almost: "Almost! Try again 💪",
+      pinSaved: "New PIN saved — time to practise!",
+      pinRemoved: "Saved PIN removed from this device.",
+      errLength: "PIN must be exactly 6 digits.",
+      errMatch: "The two PINs do not match.",
+      errSave: "Could not save on this device.",
+      noVoices: "No voices available on this device",
+      dotsNone: "No digits entered yet",
+      dotsSome: function (n) { return n + " of " + LEN + " digits entered"; },
+      greet: "Hi! Let's practise your PIN.",
+      numWords: ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"],
+      winLines: [
+        "You know your PIN!",
+        "You remembered every number!",
+        "That was perfect!",
+        "Your brain is amazing!"
+      ],
+      cheers: [
+        "Great job! You know your PIN!",
+        "You did it! Awesome work!",
+        "Perfect! You remembered your PIN!",
+        "Woo hoo! Nice job!"
+      ],
+      tryAgains: [
+        "So close! Give it another try.",
+        "Almost! You can do it. Try again.",
+        "Nice try! Let's do it one more time.",
+        "Don't give up! Try again."
+      ]
+    },
+    es: {
+      htmlLang: "es-US",
+      title: "Practica tu PIN",
+      gearLabel: "Ajustes para adultos (mantén presionado)",
+      clearKey: "Borrar",
+      clearAria: "Borrar todo",
+      backAria: "Borrar el último dígito",
+      peek: "Ver",
+      peekAria: "Mantén presionado para ver el PIN",
+      startOver: "Empezar de nuevo",
+      practiceAgain: "Practicar otra vez",
+      youDidIt: "¡LO LOGRASTE!",
+      settingsTitle: "Ajustes para adultos",
+      settingsIntro: "Elige el PIN de 6 dígitos para practicar. Nunca se muestra en esta pantalla.",
+      newPin: "PIN nuevo",
+      confirmPin: "Confirmar PIN",
+      language: "Idioma",
+      voice: "Voz",
+      test: "Probar",
+      cancel: "Cancelar",
+      savePin: "Guardar PIN",
+      forgetPin: "Borrar PIN",
+      finePrint: "El PIN se guarda solo en este navegador y en este dispositivo — nunca se envía a ningún lado, pero no está cifrado, así que usa Borrar PIN en un dispositivo compartido o prestado.",
+      statusSaved: "Hay un PIN de 6 dígitos guardado en este dispositivo.",
+      statusNone: "Aún no hay PIN guardado — practicando con " + DEFAULT_PIN + ".",
+      hintSetPin: "Mantén ⚙️ para poner el PIN",
+      holdGear: "Mantén presionado ⚙️ para abrir los ajustes",
+      onePeek: "Solo una miradita por intento — ¡tú puedes!",
+      almost: "¡Casi! Inténtalo otra vez 💪",
+      pinSaved: "¡PIN guardado — a practicar!",
+      pinRemoved: "PIN borrado de este dispositivo.",
+      errLength: "El PIN debe tener exactamente 6 dígitos.",
+      errMatch: "Los dos PIN no coinciden.",
+      errSave: "No se pudo guardar en este dispositivo.",
+      noVoices: "No hay voces disponibles en este dispositivo",
+      dotsNone: "Aún no hay dígitos",
+      dotsSome: function (n) { return n + " de " + LEN + " dígitos"; },
+      greet: "¡Hola! Vamos a practicar tu PIN.",
+      numWords: ["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"],
+      winLines: [
+        "¡Te sabes tu PIN!",
+        "¡Recordaste todos los números!",
+        "¡Estuvo perfecto!",
+        "¡Tu cerebro es increíble!"
+      ],
+      cheers: [
+        "¡Muy bien! ¡Te sabes tu PIN!",
+        "¡Lo lograste! ¡Excelente trabajo!",
+        "¡Perfecto! ¡Recordaste tu PIN!",
+        "¡Bravo! ¡Muy buen trabajo!"
+      ],
+      tryAgains: [
+        "¡Casi! Inténtalo otra vez.",
+        "¡Muy cerca! Tú puedes. Intenta de nuevo.",
+        "¡Buen intento! Una vez más.",
+        "¡No te rindas! Inténtalo otra vez."
+      ]
+    }
+  };
+
+  // Which locales a language prefers for its voice, best first. Index in
+  // this list is the sort's primary key, so an en-US voice always beats a
+  // nicer-sounding en-GB one - the numbers should come out in the accent
+  // the child hears at home.
+  var LOCALE_PREFS = {
+    en: ["en-us", "en"],
+    es: ["es-us", "es-mx", "es-419", "es"]
+  };
+
+  var uiLang = "en";
+
+  function T()
+  {
+    return STRINGS[uiLang] || STRINGS.en;
+  }
 
   var dotsEl = document.getElementById("dots");
   var msgEl = document.getElementById("message");
@@ -877,6 +1022,7 @@
   var forgetBtn = document.getElementById("forgetBtn");
   var voiceSelect = document.getElementById("voiceSelect");
   var voiceTest = document.getElementById("voiceTest");
+  var langSelect = document.getElementById("langSelect");
 
   var entry = "";
   var locked = false;
@@ -889,29 +1035,6 @@
   var DIGIT_COLORS = [
     "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
     "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#65a30d"
-  ];
-  var NUM_WORDS = [
-    "zero", "one", "two", "three", "four",
-    "five", "six", "seven", "eight", "nine"
-  ];
-
-  var WIN_LINES = [
-    "You know your PIN!",
-    "You remembered every number!",
-    "That was perfect!",
-    "Your brain is amazing!"
-  ];
-  var CHEERS = [
-    "Great job! You know your PIN!",
-    "You did it! Awesome work!",
-    "Perfect! You remembered your PIN!",
-    "Woo hoo! Nice job!"
-  ];
-  var TRY_AGAINS = [
-    "So close! Give it another try.",
-    "Almost! You can do it. Try again.",
-    "Nice try! Let's do it one more time.",
-    "Don't give up! Try again."
   ];
 
   function pick(arr)
@@ -976,6 +1099,87 @@
     return !(v && /^[0-9]{6}$/.test(v));
   }
 
+  /* ---------- language ---------- */
+  function initialLang()
+  {
+    var saved = readStored(LANG_KEY);
+    if (saved && STRINGS[saved])
+    {
+      return saved;
+    }
+    // No stored choice - follow the browser/OS language so a Spanish
+    // household lands on Spanish without digging through Settings.
+    try
+    {
+      var list = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || "en"];
+      for (var i = 0; i < list.length; i++)
+      {
+        var code = String(list[i]).toLowerCase().slice(0, 2);
+        if (STRINGS[code])
+        {
+          return code;
+        }
+      }
+    }
+    catch (e) {}
+    return "en";
+  }
+
+  function applyLang()
+  {
+    var t = T();
+    document.documentElement.lang = t.htmlLang;
+
+    var nodes = document.querySelectorAll("[data-i18n]");
+    for (var i = 0; i < nodes.length; i++)
+    {
+      var key = nodes[i].getAttribute("data-i18n");
+      if (typeof t[key] === "string")
+      {
+        nodes[i].textContent = t[key];
+      }
+    }
+    var arias = document.querySelectorAll("[data-i18n-aria]");
+    for (var j = 0; j < arias.length; j++)
+    {
+      var akey = arias[j].getAttribute("data-i18n-aria");
+      if (typeof t[akey] === "string")
+      {
+        arias[j].setAttribute("aria-label", t[akey]);
+      }
+    }
+    var titles = document.querySelectorAll("[data-i18n-title]");
+    for (var k = 0; k < titles.length; k++)
+    {
+      var tkey = titles[k].getAttribute("data-i18n-title");
+      if (typeof t[tkey] === "string")
+      {
+        titles[k].setAttribute("title", t[tkey]);
+      }
+    }
+
+    document.title = t.title;
+    langSelect.value = uiLang;
+    renderDots();
+    renderPinStatus();
+    hint();
+  }
+
+  function setLang(code)
+  {
+    if (!STRINGS[code] || code === uiLang)
+    {
+      return;
+    }
+    uiLang = code;
+    writeStored(LANG_KEY, code);
+    applyLang();
+    // Voices are filtered by language, so the pick has to be redone.
+    loadVoices();
+  }
+
   /* ---------- entry display ---------- */
   function buildDots()
   {
@@ -1010,9 +1214,7 @@
       }
       nodes[i].className = cls;
     }
-    dotsEl.setAttribute("aria-label", entry.length
-      ? entry.length + " of " + LEN + " digits entered"
-      : "No digits entered yet");
+    dotsEl.setAttribute("aria-label", entry.length ? T().dotsSome(entry.length) : T().dotsNone);
   }
 
   function setMessage(t)
@@ -1026,7 +1228,7 @@
 
   function hint()
   {
-    setMessage(usingDefault() ? "Hold ⚙️ to set the PIN" : "");
+    setMessage(usingDefault() ? T().hintSetPin : "");
   }
 
   function flashMessage(text, ms)
@@ -1059,7 +1261,7 @@
       hintBtn.classList.remove("is-denied");
       void hintBtn.offsetWidth;
       hintBtn.classList.add("is-denied");
-      flashMessage("One peek per try — you can do it!");
+      flashMessage(T().onePeek);
       return;
     }
     peekUsed = true;
@@ -1204,10 +1406,11 @@
   /* ---------- speech ---------- */
   // Browser speech quality varies enormously by device: the same API
   // gives you a warm neural voice on one phone and a 1990s robot on
-  // another. Rather than take whatever getVoices() lists first, score
-  // the available English voices and prefer the neural / "Natural" /
-  // cloud-backed ones, and let a grown-up override the pick in Settings
-  // (their choice is remembered). This is as natural as it gets without
+  // another. Rather than take whatever getVoices() lists first, keep only
+  // voices for the chosen language, rank the preferred locale first
+  // (en-US, or es-US/es-MX for Spanish), then prefer the neural /
+  // "Natural" / cloud-backed ones - and let a grown-up override the pick
+  // in Settings, per language. This is as natural as it gets without
   // shipping an API key for a paid cloud TTS service, which has no safe
   // home in a public static page.
   var voices = [];
@@ -1219,6 +1422,25 @@
            typeof window.SpeechSynthesisUtterance !== "undefined";
   }
 
+  function voiceKey()
+  {
+    return VOICE_KEY_PREFIX + uiLang + ".v1";
+  }
+
+  function localeRank(v)
+  {
+    var lang = (v && v.lang ? v.lang : "").toLowerCase().replace(/_/g, "-");
+    var prefs = LOCALE_PREFS[uiLang] || LOCALE_PREFS.en;
+    for (var i = 0; i < prefs.length; i++)
+    {
+      if (lang.indexOf(prefs[i]) === 0)
+      {
+        return i;
+      }
+    }
+    return prefs.length;
+  }
+
   function voiceScore(v)
   {
     if (!v)
@@ -1226,7 +1448,6 @@
       return -999;
     }
     var name = ((v.name || "") + " " + (v.voiceURI || "")).toLowerCase();
-    var lang = (v.lang || "").toLowerCase();
     var s = 0;
     if (name.indexOf("natural") !== -1) { s += 60; }
     if (name.indexOf("neural") !== -1) { s += 55; }
@@ -1234,12 +1455,9 @@
     if (name.indexOf("google") !== -1) { s += 35; }
     if (name.indexOf("siri") !== -1) { s += 30; }
     if (name.indexOf("online") !== -1) { s += 25; }
-    if (/samantha|aria|jenny|ava|allison|nicky|zoe|serena|karen|moira/.test(name)) { s += 18; }
+    if (/samantha|aria|jenny|ava|allison|nicky|zoe|serena|paulina|m[oó]nica|luc[ií]a|elena|dalia|jorge|juan/.test(name)) { s += 18; }
     if (/compact|espeak|pico|novelty|whisper|bells|organ|zarvox|trinoids|bubbles|cellos|bahh/.test(name)) { s -= 70; }
     if (v.localService === false) { s += 10; }
-    if (lang.indexOf("en-us") === 0) { s += 12; }
-    else if (lang.indexOf("en-gb") === 0) { s += 10; }
-    else if (lang.indexOf("en") === 0) { s += 6; }
     if (v.default) { s += 2; }
     return s;
   }
@@ -1264,18 +1482,23 @@
       return;
     }
 
-    var english = [];
+    var matching = [];
     for (var i = 0; i < all.length; i++)
     {
-      if (/^en/i.test(all[i].lang || ""))
+      if (new RegExp("^" + uiLang, "i").test(all[i].lang || ""))
       {
-        english.push(all[i]);
+        matching.push(all[i]);
       }
     }
-    voices = english.length ? english : all.slice();
-    voices.sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+    // No voice installed for this language: fall back to everything
+    // rather than going silent.
+    voices = matching.length ? matching : all.slice();
+    voices.sort(function (a, b)
+    {
+      return (localeRank(a) - localeRank(b)) || (voiceScore(b) - voiceScore(a));
+    });
 
-    var savedURI = readStored(VOICE_KEY);
+    var savedURI = readStored(voiceKey());
     chosenVoice = null;
     if (savedURI)
     {
@@ -1304,7 +1527,7 @@
     if (!voices.length)
     {
       var none = document.createElement("option");
-      none.textContent = "No voices available on this device";
+      none.textContent = T().noVoices;
       none.value = "";
       voiceSelect.appendChild(none);
       voiceSelect.disabled = true;
@@ -1346,6 +1569,10 @@
         u.lang = chosenVoice.lang;
         natural = voiceScore(chosenVoice) >= 30;
       }
+      else
+      {
+        u.lang = T().htmlLang;
+      }
       u.rate = rate;
       // A good neural voice already sounds friendly; winding its pitch
       // up makes it sound synthetic again. Only the fallback robot
@@ -1363,17 +1590,17 @@
 
   function sayDigit(digit)
   {
-    speak(NUM_WORDS[Number(digit)] || String(digit), 0.95, 1.3, false);
+    speak(T().numWords[Number(digit)] || String(digit), 0.95, 1.3, false);
   }
 
   function cheer()
   {
-    speak(pick(CHEERS), 1, 1.2, true);
+    speak(pick(T().cheers), 1, 1.2, true);
   }
 
   function encourage()
   {
-    speak(pick(TRY_AGAINS), 0.97, 1.15, true);
+    speak(pick(T().tryAgains), 0.97, 1.15, true);
   }
 
   function stopSpeech()
@@ -1477,7 +1704,7 @@
     locked = true;
     renderDots("wrong");
     dotsEl.classList.add("shake");
-    setMessage("Almost! Try again 💪");
+    setMessage(T().almost);
     sadSound();
     encourage();
     buzz([40, 70, 40]);
@@ -1498,7 +1725,7 @@
     wins += 1;
     renderStars();
     renderDots("win");
-    celebrateLine.textContent = pick(WIN_LINES);
+    celebrateLine.textContent = pick(T().winLines);
     celebrateEl.hidden = false;
     launchConfetti();
     window.setTimeout(launchConfetti, 450);
@@ -1606,9 +1833,7 @@
 
   function renderPinStatus()
   {
-    pinStatus.textContent = usingDefault()
-      ? "No PIN saved yet — practising with " + DEFAULT_PIN + "."
-      : "A 6-digit PIN is saved on this device.";
+    pinStatus.textContent = usingDefault() ? T().statusNone : T().statusSaved;
   }
 
   function openSettings()
@@ -1618,6 +1843,7 @@
     settingsMsg.textContent = "";
     settingsMsg.removeAttribute("data-ok");
     renderPinStatus();
+    langSelect.value = uiLang;
     loadVoices();
     settingsEl.hidden = false;
     window.setTimeout(function () { pinInput.focus(); }, 50);
@@ -1638,24 +1864,24 @@
     settingsMsg.removeAttribute("data-ok");
     if (!/^[0-9]{6}$/.test(a))
     {
-      settingsMsg.textContent = "PIN must be exactly 6 digits.";
+      settingsMsg.textContent = T().errLength;
       pinInput.focus();
       return;
     }
     if (a !== b)
     {
-      settingsMsg.textContent = "The two PINs do not match.";
+      settingsMsg.textContent = T().errMatch;
       pinConfirm.focus();
       return;
     }
     if (!writeStored(STORE_KEY, a))
     {
-      settingsMsg.textContent = "Could not save on this device.";
+      settingsMsg.textContent = T().errSave;
       return;
     }
     closeSettings();
     reset();
-    flashMessage("New PIN saved — time to practise!", 2600);
+    flashMessage(T().pinSaved, 2600);
   }
 
   function forgetPin()
@@ -1669,7 +1895,7 @@
     pinConfirm.value = "";
     renderPinStatus();
     settingsMsg.setAttribute("data-ok", "1");
-    settingsMsg.textContent = "Saved PIN removed from this device.";
+    settingsMsg.textContent = T().pinRemoved;
     reset();
   }
 
@@ -1719,7 +1945,7 @@
     {
       window.clearTimeout(gearTimer);
       gearTimer = null;
-      flashMessage("Hold the ⚙️ button to open settings");
+      flashMessage(T().holdGear);
     }
   }
 
@@ -1743,6 +1969,12 @@
   settingsSave.addEventListener("click", saveSettings);
   forgetBtn.addEventListener("click", forgetPin);
 
+  langSelect.addEventListener("change", function ()
+  {
+    setLang(langSelect.value);
+    speak(T().greet, 1, 1.1, false);
+  });
+
   voiceSelect.addEventListener("change", function ()
   {
     var uri = voiceSelect.value;
@@ -1751,16 +1983,16 @@
       if (voices[i].voiceURI === uri)
       {
         chosenVoice = voices[i];
-        writeStored(VOICE_KEY, uri);
+        writeStored(voiceKey(), uri);
         break;
       }
     }
-    speak("Hi! Let's practise your PIN.", 1, 1.1, false);
+    speak(T().greet, 1, 1.1, false);
   });
 
   voiceTest.addEventListener("click", function ()
   {
-    speak("Great job! You know your PIN!", 1, 1.15, false);
+    speak(pick(T().cheers), 1, 1.15, false);
   });
 
   settingsEl.addEventListener("click", function (e)
@@ -1863,6 +2095,12 @@
     }
   }
 
+  uiLang = initialLang();
+  paintKeys();
+  buildDots();
+  applyLang();
+  renderStars();
+
   if (hasSpeech())
   {
     loadVoices();
@@ -1874,12 +2112,6 @@
   {
     fillVoiceSelect();
   }
-
-  paintKeys();
-  buildDots();
-  renderDots();
-  renderStars();
-  hint();
 })();
 </script>
 </body>

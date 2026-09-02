@@ -41,13 +41,30 @@ Anyone with the unlocked device and devtools could read it. Treat it the way
 you'd treat a sticky note: fine on a family tablet, not on a shared or
 borrowed one. **Forget PIN** in Settings wipes it immediately.
 
+## Language
+
+English and Spanish. Everything switches — the on-screen copy, the spoken
+digits (`three` / `tres`), the cheers and the encouragements — under
+**Language** in Settings.
+
+On first run it follows the browser/OS language, so a Spanish household lands
+on Spanish without digging through Settings. The choice is remembered after
+that.
+
 ## Voice
 
 The page uses the browser's built-in `speechSynthesis`. Quality varies a lot
-by device, so rather than take whatever voice is listed first, it scores the
-available English voices and prefers the neural / "Natural" / cloud-backed
-ones. A grown-up can override the pick under **Voice** in Settings (with a
-**Test** button); the choice is remembered.
+by device, so rather than take whatever voice is listed first it:
+
+1. keeps only voices for the chosen language,
+2. ranks the preferred locale first — **en-US** for English, es-US → es-MX →
+   es-419 → any Spanish — so the numbers come out in the accent the child
+   hears at home,
+3. then prefers the neural / "Natural" / Premium / cloud-backed ones over the
+   robotic fallbacks.
+
+A grown-up can override the pick under **Voice** in Settings (with a **Test**
+button); the choice is remembered per language.
 
 That's as natural as it gets without a paid cloud TTS service — those need an
 API key, and a public static page is not a safe place to keep one.
