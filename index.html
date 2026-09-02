@@ -26,7 +26,7 @@
     --muted: #8a8aa0;
     --card: #ffffff;
     --key-border: #e6e6ef;
-    --key-shadow: #dcdce8;
+    --key-shadow: #d2d2e4;
     --accent: #2f9e6e;
     --accent-dark: #24805a;
     --accent-ink: #ffffff;
@@ -160,7 +160,7 @@
     line-height: 1;
     cursor: pointer;
     touch-action: none;
-    box-shadow: 0 3px 0 var(--key-shadow);
+    box-shadow: 0 4px 0 var(--key-shadow);
     transition: transform 120ms ease, box-shadow 120ms ease;
   }
 
@@ -295,14 +295,18 @@
     cursor: pointer;
     touch-action: manipulation;
     text-shadow: 0 0 3px rgba(0, 0, 0, 0.28), 0 2px 0 rgba(0, 0, 0, 0.22);
-    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.20), 0 9px 16px rgba(0, 0, 0, 0.12);
+    /* Solid ledge in a darker shade of the key's OWN colour (--kc-dark,
+       computed in paintKeys), the way the Peek button's darker yellow
+       works - a flat black shadow just looked grubby against the bright
+       faces instead of reading as a moulded edge. */
+    box-shadow: 0 6px 0 var(--kc-dark, var(--key-shadow)), 0 9px 16px rgba(0, 0, 0, 0.14);
     transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease;
   }
 
   .key:active
   {
     transform: translateY(5px) scale(0.97);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+    box-shadow: 0 1px 0 var(--kc-dark, var(--key-shadow));
     filter: brightness(1.12) saturate(1.1);
   }
 
@@ -314,8 +318,10 @@
     font-size: clamp(1rem, 4.4vw, 1.4rem);
     text-shadow: none;
     border: 2px solid var(--key-border);
-    box-shadow: 0 5px 0 var(--key-shadow);
+    box-shadow: 0 6px 0 var(--key-shadow), 0 9px 16px rgba(0, 0, 0, 0.10);
   }
+
+  .key--action:active { box-shadow: 0 1px 0 var(--key-shadow); }
 
   .key--action:active { filter: none; background: #f1f1f7; }
 
@@ -818,10 +824,10 @@
       height: clamp(40px, 12.5vh, 64px);
       font-size: clamp(1.3rem, 6vh, 2rem);
       border-radius: 16px;
-      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
+      box-shadow: 0 5px 0 var(--kc-dark, var(--key-shadow)), 0 7px 12px rgba(0, 0, 0, 0.14);
     }
 
-    .key:active { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22); }
+    .key:active { box-shadow: 0 1px 0 var(--kc-dark, var(--key-shadow)); }
     .key--action { font-size: clamp(0.8rem, 3.4vh, 1.1rem); box-shadow: 0 4px 0 var(--key-shadow); }
     .echo { font-size: clamp(4rem, 22vh, 9rem); top: 44%; }
 
@@ -2315,6 +2321,23 @@
     }
   });
 
+  // Darker shade of a key's own colour for its 3D ledge - the same trick
+  // the Peek button's darker yellow uses. Computed here rather than with
+  // CSS color-mix() so older browsers get it too.
+  function shade(hex, factor)
+  {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m)
+    {
+      return hex;
+    }
+    var n = parseInt(m[1], 16);
+    var r = Math.round(((n >> 16) & 255) * factor);
+    var g = Math.round(((n >> 8) & 255) * factor);
+    var b = Math.round((n & 255) * factor);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
   function paintKeys()
   {
     var keys = keypadEl.querySelectorAll(".key[data-key]");
@@ -2323,7 +2346,9 @@
       var k = keys[i].getAttribute("data-key");
       if (/^[0-9]$/.test(k))
       {
-        keys[i].style.setProperty("--kc", DIGIT_COLORS[Number(k)]);
+        var color = DIGIT_COLORS[Number(k)];
+        keys[i].style.setProperty("--kc", color);
+        keys[i].style.setProperty("--kc-dark", shade(color, 0.68));
       }
     }
   }
