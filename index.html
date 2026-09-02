@@ -439,6 +439,20 @@
   .peek-eyes .iris { fill: #3a2a00; }
   .peek-eyes .glint { fill: #ffffff; opacity: 0.9; }
 
+  /* The shut-lid seam. Hidden while the peek is still available; once
+     it has been spent the pupils fade out and this fades in, so the eye
+     keeps its full normal outline and simply closes, rather than being
+     squashed flat the way the blink does it. */
+  .peek-eyes .lid
+  {
+    fill: none;
+    stroke: #5a3d00;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+
   /* Guarded: without fill-box the scale would pivot on the SVG origin
      and fling the eyes off the button instead of blinking them. */
   @supports (transform-box: fill-box)
@@ -453,7 +467,11 @@
     .peek-eyes.is-blinking .eye { transform: scaleY(0.08); }
   }
 
-  .peek-btn.is-spent .peek-eyes { opacity: 0.75; }
+  /* Peek already used: eyes asleep. Full eye shape stays, pupils go. */
+  .peek-btn.is-spent .peek-eyes { opacity: 0.85; }
+  .peek-btn.is-spent .peek-eyes .pupil { opacity: 0; transition: opacity 200ms ease; }
+  .peek-btn.is-spent .peek-eyes .lid { opacity: 1; }
+  .peek-btn.is-spent .peek-eyes .eye { transform: none; }
 
   .peek-btn:active
   {
@@ -876,7 +894,7 @@
   </div>
 
   <div class="footer-actions">
-    <button id="hintBtn" class="peek-btn" type="button" data-i18n-aria="peekAria" aria-label="Hold to peek at the PIN"><svg id="peekEyes" class="peek-eyes" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><g class="eye"><ellipse class="sclera" cx="11.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="11.5" cy="13" r="4.4"/><circle class="glint" cx="13.2" cy="11.1" r="1.5"/></g></g><g class="eye"><ellipse class="sclera" cx="32.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="32.5" cy="13" r="4.4"/><circle class="glint" cx="34.2" cy="11.1" r="1.5"/></g></g></svg><span data-i18n="peek">Peek</span></button>
+    <button id="hintBtn" class="peek-btn" type="button" data-i18n-aria="peekAria" aria-label="Hold to peek at the PIN"><svg id="peekEyes" class="peek-eyes" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><g class="eye"><ellipse class="sclera" cx="11.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="11.5" cy="13" r="4.4"/><circle class="glint" cx="13.2" cy="11.1" r="1.5"/></g><path class="lid" d="M 2.6 12.4 Q 11.5 19.4 20.4 12.4"/></g><g class="eye"><ellipse class="sclera" cx="32.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="32.5" cy="13" r="4.4"/><circle class="glint" cx="34.2" cy="11.1" r="1.5"/></g><path class="lid" d="M 23.6 12.4 Q 32.5 19.4 41.4 12.4"/></g></svg><span data-i18n="peek">Peek</span></button>
     <button id="restartBtn" class="restart restart--ghost" type="button" data-i18n="startOver">Start over</button>
   </div>
 </main>
@@ -1403,7 +1421,9 @@
 
   function startEyes()
   {
-    if (!eyesEl || reducedMotion())
+    // Nothing to animate once the peek is spent - those eyes are shut
+    // until the next try re-arms the button.
+    if (!eyesEl || reducedMotion() || peekUsed)
     {
       return;
     }
@@ -1417,6 +1437,10 @@
     window.clearTimeout(blinkTimer);
     lookTimer = null;
     blinkTimer = null;
+    if (eyesEl)
+    {
+      eyesEl.classList.remove("is-blinking");
+    }
   }
 
   function setEyesFast(on)
@@ -1445,6 +1469,9 @@
     peekUsed = false;
     hintBtn.classList.remove("is-spent");
     hintBtn.setAttribute("aria-disabled", "false");
+    // Eyes wake back up for the new try.
+    moveEyes(true);
+    startEyes();
   }
 
   function peekShow(e)
@@ -1492,6 +1519,8 @@
     {
       hintBtn.classList.add("is-spent");
       hintBtn.setAttribute("aria-disabled", "true");
+      // Stop glancing/blinking so the eyes settle shut and stay shut.
+      stopEyes();
     }
     hint();
   }
