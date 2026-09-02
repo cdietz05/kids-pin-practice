@@ -144,14 +144,19 @@
   .icon-btn
   {
     appearance: none;
+    position: relative;
+    overflow: hidden;
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 2px solid var(--key-border);
     background: var(--card);
     color: var(--ink);
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border-radius: 16px;
-    font-size: 1.5rem;
+    font-size: 1.85rem;
     line-height: 1;
     cursor: pointer;
     touch-action: none;
@@ -161,14 +166,51 @@
 
   .icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
 
-  /* Wind-up while the gear is being held down - the settings panel only
-     opens on a deliberate long press, so a stray toddler tap can't
-     reach (or overwrite) the saved PIN. */
+  /* Hold-to-open progress: a tint that rises up the button over the hold
+     duration, with only the GLYPH turning. The button itself must never
+     rotate - a rounded square spun 180 degrees lands looking exactly
+     like where it started, which is what made the old wind-up
+     invisible. */
+  .icon-btn .gear
+  {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    line-height: 1;
+    transition: transform 180ms ease;
+  }
+
+  .icon-btn::after
+  {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    background: var(--accent);
+    opacity: 0.28;
+    transform: translateY(100%);
+    transition: transform 180ms ease;
+    pointer-events: none;
+  }
+
   .icon-btn.is-holding
   {
-    transform: scale(0.9) rotate(180deg);
-    transition: transform 800ms linear;
+    transform: translateY(2px);
     box-shadow: 0 1px 0 var(--key-shadow);
+  }
+
+  .icon-btn.is-holding::after
+  {
+    transform: translateY(0);
+    transition: transform 800ms linear;
+  }
+
+  .icon-btn.is-holding .gear
+  {
+    transform: rotate(180deg) scale(1.18);
+    transition: transform 800ms linear;
   }
 
   .dots
@@ -675,7 +717,7 @@
     .keypad { gap: clamp(9px, 2.4vw, 14px); }
 
     h1 { font-size: clamp(1.35rem, 6.5vw, 1.8rem); }
-    .icon-btn { width: 46px; height: 46px; font-size: 1.35rem; }
+    .icon-btn { width: 50px; height: 50px; font-size: 1.65rem; }
     .dot { width: clamp(18px, 5vw, 26px); height: clamp(18px, 5vw, 26px); }
     .message { font-size: clamp(0.95rem, 4vw, 1.1rem); }
   }
@@ -704,7 +746,7 @@
     }
 
     h1 { font-size: clamp(1.15rem, 5vh, 1.5rem); }
-    .icon-btn { width: 44px; height: 44px; font-size: 1.25rem; }
+    .icon-btn { width: 46px; height: 46px; font-size: 1.5rem; }
 
     #keypad
     {
@@ -756,7 +798,9 @@
     .peek-btn.is-denied,
     .shake { animation: none !important; }
     .echo { opacity: 0 !important; }
-    .icon-btn.is-holding { transition: none; transform: scale(0.94); }
+    /* The rising fill is a progress indicator, not decoration, so it
+       stays - only the glyph's spin is dropped. */
+    .icon-btn.is-holding .gear { transition: none; transform: none; }
   }
 </style>
 </head>
@@ -768,7 +812,7 @@
     <header>
       <h1 data-i18n="title">PIN Practice</h1>
       <p id="stars" class="stars" aria-live="polite"></p>
-      <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings">&#9881;&#65039;</button>
+      <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings"><span class="gear" aria-hidden="true">&#9881;&#65039;</span></button>
     </header>
 
     <div id="dots" class="dots" role="img" aria-label="No digits entered yet"></div>
