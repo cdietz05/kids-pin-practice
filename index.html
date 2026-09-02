@@ -934,7 +934,7 @@
     50% { filter: brightness(1.22); transform: translateY(-4px) scale(1.04); }
   }
 
-  /* ---------- header chip (level / sticker count) ---------- */
+  /* ---------- header chip (level, or session wins) ---------- */
   .chip
   {
     appearance: none;
@@ -956,58 +956,72 @@
   .chip[data-clickable="1"] { cursor: pointer; }
   .chip[data-clickable="1"]:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
 
-  /* ---------- stickers ---------- */
-  .sticker-grid
-  {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
-    gap: 8px;
-    margin: 0 0 4px;
-  }
-
-  .sticker-slot
-  {
-    aspect-ratio: 1 / 1;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.04);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sticker-slot svg { width: 78%; height: 78%; display: block; }
-
-  .sticker-empty
-  {
-    margin: 6px 0 0;
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 0.95rem;
-  }
-
-  /* The just-earned sticker, plopped onto the win card. */
-  .sticker-prize
-  {
-    width: 74px;
-    height: 74px;
-    margin: 4px auto 10px;
-    display: block;
-    animation: stickerPlop 620ms cubic-bezier(0.18, 1.5, 0.4, 1);
-  }
-
-  @keyframes stickerPlop
-  {
-    0% { transform: scale(0.1) rotate(-35deg); opacity: 0; }
-    55% { transform: scale(1.25) rotate(8deg); opacity: 1; }
-    75% { transform: scale(0.94) rotate(-4deg); }
-    100% { transform: scale(1) rotate(0deg); }
-  }
-
   .level-up
   {
     margin: 0 0 14px !important;
     color: var(--title) !important;
     font-weight: 800 !important;
+  }
+
+  /* ---------- level picker ----------
+     Reachable in one tap from the header chip, deliberately NOT behind
+     the settings hold-gate: dropping back a level when a child is
+     struggling has to be quick, and unlike the PIN there is nothing
+     here worth protecting. */
+  .level-list
+  {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 4px 0 0;
+  }
+
+  .level-option
+  {
+    appearance: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    padding: 12px 14px;
+    border: 2px solid var(--key-border);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--key-shadow);
+  }
+
+  .level-option:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
+
+  .level-option b
+  {
+    display: block;
+    font-size: 1.02rem;
+    font-weight: 800;
+  }
+
+  .level-option small
+  {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+
+  .level-option[aria-current="true"]
+  {
+    border-color: var(--accent);
+    background: rgba(47, 158, 110, 0.1);
+    box-shadow: 0 4px 0 var(--accent-dark);
+  }
+
+  .level-option[aria-current="true"] b::after
+  {
+    content: " ✓";
+    color: var(--accent);
   }
 
   /* ---------- settings sections ---------- */
@@ -1027,7 +1041,7 @@
 
   @media (prefers-color-scheme: dark)
   {
-    .sticker-slot { background: rgba(255, 255, 255, 0.07); }
+    .level-option[aria-current="true"] { background: rgba(47, 158, 110, 0.18); }
   }
 
   @media (prefers-reduced-motion: reduce)
@@ -1038,7 +1052,6 @@
     .celebrate__card,
     .peek-btn.is-peeking,
     .peek-btn.is-denied,
-    .sticker-prize,
     .shake { animation: none !important; }
     .echo { opacity: 0 !important; }
     /* The rising fill is a progress indicator, not decoration, so it
@@ -1095,8 +1108,7 @@
 
 <div id="celebrate" class="celebrate" hidden>
   <div class="celebrate__card" role="dialog" aria-modal="true" aria-labelledby="celebrateTitle">
-    <div id="celebrateEmoji" class="celebrate__emoji" aria-hidden="true">&#127881;</div>
-    <div id="stickerPrize" hidden></div>
+    <div class="celebrate__emoji" aria-hidden="true">&#127881;</div>
     <h2 id="celebrateTitle" data-i18n="youDidIt">YOU DID IT!</h2>
     <p id="celebrateLine">You know your PIN!</p>
     <p id="levelUpLine" class="level-up" hidden></p>
@@ -1104,14 +1116,13 @@
   </div>
 </div>
 
-<div id="stickerBook" class="modal" hidden>
-  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="stickerTitle" tabindex="-1">
-    <h2 id="stickerTitle" data-i18n="stickerBook">Sticker Book</h2>
-    <p id="stickerCount"></p>
-    <div id="stickerGrid" class="sticker-grid"></div>
-    <p id="stickerEmpty" class="sticker-empty" data-i18n="stickerEmpty" hidden>No stickers yet — get your PIN right to earn one!</p>
+<div id="levelPicker" class="modal" hidden>
+  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="levelPickerTitle" tabindex="-1">
+    <h2 id="levelPickerTitle" data-i18n="levelPickerTitle">Choose a level</h2>
+    <p data-i18n="levelPickerIntro">Move down a level any time it gets too hard, and back up when it doesn't.</p>
+    <div id="levelList" class="level-list"></div>
     <div class="modal__actions" style="margin-top: 16px;">
-      <button id="stickerClose" class="btn" type="button" data-i18n="close">Close</button>
+      <button id="levelClose" class="btn" type="button" data-i18n="close">Close</button>
     </div>
   </div>
 </div>
@@ -1144,22 +1155,13 @@
       <span data-i18n="levelsLabel">Practice levels — help fades as they improve</span>
     </label>
 
-    <label for="levelSelect" id="levelSelectRow"><span data-i18n="levelLabel">Current level</span>
-      <select id="levelSelect">
-        <option value="1"></option>
-        <option value="2"></option>
-        <option value="3"></option>
-      </select>
-    </label>
-
-    <label class="toggle-row" for="stickersToggle">
-      <input id="stickersToggle" type="checkbox" checked>
-      <span data-i18n="stickersLabel">Sticker rewards — one for every success</span>
-    </label>
+    <div id="levelSelectRow" class="modal__actions" style="justify-content: flex-start; margin-bottom: 16px;">
+      <button id="openLevelsBtn" class="btn btn--ghost" type="button"></button>
+    </div>
 
     <label class="toggle-row" for="shuffleToggle">
       <input id="shuffleToggle" type="checkbox">
-      <span data-i18n="shuffleLabel">Shuffle the keypad — proves they know the numbers, not the finger path</span>
+      <span data-i18n="shuffleLabel">Always shuffle the keypad (level 5 does this on its own)</span>
     </label>
 
     <label class="toggle-row" for="hintsToggle">
@@ -1204,8 +1206,6 @@
   var LEVELS_KEY = "pinPractice.levels.v1";
   var LEVEL_KEY = "pinPractice.level.v1";
   var STREAK_KEY = "pinPractice.levelStreak.v1";
-  var STICKERS_ON_KEY = "pinPractice.stickersOn.v1";
-  var STICKERS_KEY = "pinPractice.stickers.v1";
   var SHUFFLE_KEY = "pinPractice.shuffle.v1";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
@@ -1217,12 +1217,16 @@
   // Level 2 waits this long before lighting the next key, so the child
   // gets a real go at recalling it first.
   var GUIDE_DELAY_MS = 1600;
-  var MAX_LEVEL = 3;
+  var MAX_LEVEL = 5;
   // Correct entries in a row at the current level before moving up.
   var LEVEL_UP_STREAK = 3;
-  // Sticker history is a string of digits, one per sticker. Capped so a
-  // very keen child can't grow localStorage without bound.
-  var MAX_STICKERS = 240;
+  // Wrong entries in a row before we point out that an easier level is
+  // one tap away. Never demotes on its own - that reads as punishment.
+  var STRUGGLE_FAILS = 3;
+  // From this level up, Peek is gone.
+  var NO_PEEK_LEVEL = 4;
+  // From this level up, the keypad is shuffled every try.
+  var SHUFFLE_LEVEL = 5;
 
   /* ---------- copy, per language ----------
      Every visible string and every spoken line lives here so a language
@@ -1251,9 +1255,10 @@
       voice: "Voice",
       hintsLabel: "Wiggle the next key if they get stuck",
       levelsLabel: "Practice levels — help fades as they improve",
-      levelLabel: "Current level",
-      stickersLabel: "Sticker rewards — one for every success",
-      shuffleLabel: "Shuffle the keypad — proves they know the numbers, not the finger path",
+      shuffleLabel: "Always shuffle the keypad (level 5 does this on its own)",
+      changeLevel: "Change level…",
+      levelPickerTitle: "Choose a level",
+      levelPickerIntro: "Move down a level any time it gets too hard, and back up when it doesn't.",
       soundOnLabel: "Sound is on — tap to mute",
       soundOffLabel: "Sound is off — tap to unmute",
       soundMuted: "Sound off 🔇",
@@ -1263,13 +1268,25 @@
       close: "Close",
       savePin: "Save PIN",
       forgetPin: "Forget PIN",
-      stickerBook: "Sticker Book",
-      stickerEmpty: "No stickers yet — get your PIN right to earn one!",
-      stickerCount: function (n) { return n === 1 ? "1 sticker earned" : n + " stickers earned"; },
-      stickerBookAria: function (n) { return "Sticker book, " + n + " earned"; },
-      levelNames: ["Follow the lights", "Try first", "All by myself"],
+      levelNames: [
+        "Follow the lights",
+        "Try first",
+        "On your own",
+        "No peeking",
+        "Mix it up"
+      ],
+      levelBlurbs: [
+        "The next key lights up straight away — just follow it.",
+        "The next key lights up after a moment, so there's a chance to remember it first.",
+        "No lights. Peek is there if it's needed.",
+        "No lights and no Peek — all from memory.",
+        "The keys move around every try, so it's the numbers being remembered, not the finger path."
+      ],
       levelUp: function (n) { return "Level " + n + " unlocked!"; },
       levelShort: function (n) { return "Lv " + n; },
+      levelSet: function (n) { return "Level " + n + " — " + STRINGS.en.levelNames[n - 1]; },
+      levelAria: function (n) { return "Level " + n + ", tap to change"; },
+      struggling: "Tap the level chip for an easier level",
       finePrint: "The PIN is kept in this browser's local storage on this device only — it is never sent anywhere, but it is not encrypted, so use Forget PIN on a shared or borrowed device.",
       statusSaved: "A 6-digit PIN is saved on this device.",
       statusNone: "No PIN saved yet — practising with " + DEFAULT_PIN + ".",
@@ -1332,9 +1349,10 @@
       voice: "Voz",
       hintsLabel: "Mover la siguiente tecla si se atora",
       levelsLabel: "Niveles de práctica — la ayuda se reduce poco a poco",
-      levelLabel: "Nivel actual",
-      stickersLabel: "Calcomanías — una por cada acierto",
-      shuffleLabel: "Revolver el teclado — comprueba que se sabe los números, no el movimiento",
+      shuffleLabel: "Revolver siempre el teclado (el nivel 5 ya lo hace)",
+      changeLevel: "Cambiar de nivel…",
+      levelPickerTitle: "Elige un nivel",
+      levelPickerIntro: "Baja de nivel cuando se ponga difícil, y sube cuando ya no lo esté.",
       soundOnLabel: "El sonido está encendido — toca para silenciar",
       soundOffLabel: "El sonido está apagado — toca para activarlo",
       soundMuted: "Sonido apagado 🔇",
@@ -1344,13 +1362,25 @@
       close: "Cerrar",
       savePin: "Guardar PIN",
       forgetPin: "Borrar PIN",
-      stickerBook: "Álbum de calcomanías",
-      stickerEmpty: "Aún no hay calcomanías — ¡acierta tu PIN para ganar una!",
-      stickerCount: function (n) { return n === 1 ? "1 calcomanía ganada" : n + " calcomanías ganadas"; },
-      stickerBookAria: function (n) { return "Álbum de calcomanías, " + n + " ganadas"; },
-      levelNames: ["Sigue las luces", "Inténtalo primero", "Yo solito"],
+      levelNames: [
+        "Sigue las luces",
+        "Inténtalo primero",
+        "Tú solito",
+        "Sin mirar",
+        "Todo revuelto"
+      ],
+      levelBlurbs: [
+        "La siguiente tecla se ilumina de inmediato — solo síguela.",
+        "La siguiente tecla se ilumina después de un momento, para darte chance de recordarla.",
+        "Sin luces. El botón Ver está ahí por si hace falta.",
+        "Sin luces y sin Ver — todo de memoria.",
+        "Las teclas cambian de lugar cada intento, así se recuerdan los números y no el movimiento."
+      ],
       levelUp: function (n) { return "¡Nivel " + n + " desbloqueado!"; },
       levelShort: function (n) { return "Niv " + n; },
+      levelSet: function (n) { return "Nivel " + n + " — " + STRINGS.es.levelNames[n - 1]; },
+      levelAria: function (n) { return "Nivel " + n + ", toca para cambiar"; },
+      struggling: "Toca el nivel para elegir uno más fácil",
       finePrint: "El PIN se guarda solo en este navegador y en este dispositivo — nunca se envía a ningún lado, pero no está cifrado, así que usa Borrar PIN en un dispositivo compartido o prestado.",
       statusSaved: "Hay un PIN de 6 dígitos guardado en este dispositivo.",
       statusNone: "Aún no hay PIN guardado — practicando con " + DEFAULT_PIN + ".",
@@ -1419,7 +1449,6 @@
   var celebrateEl = document.getElementById("celebrate");
   var celebrateLine = document.getElementById("celebrateLine");
   var levelUpLine = document.getElementById("levelUpLine");
-  var stickerPrize = document.getElementById("stickerPrize");
   var againBtn = document.getElementById("againBtn");
   var settingsBtn = document.getElementById("settingsBtn");
   var settingsEl = document.getElementById("settings");
@@ -1435,17 +1464,14 @@
   var langSelect = document.getElementById("langSelect");
   var hintsToggle = document.getElementById("hintsToggle");
   var levelsToggle = document.getElementById("levelsToggle");
-  var levelSelect = document.getElementById("levelSelect");
   var levelSelectRow = document.getElementById("levelSelectRow");
-  var stickersToggle = document.getElementById("stickersToggle");
+  var openLevelsBtn = document.getElementById("openLevelsBtn");
   var shuffleToggle = document.getElementById("shuffleToggle");
   var soundBtn = document.getElementById("soundBtn");
   var soundIcon = document.getElementById("soundIcon");
-  var stickerBookEl = document.getElementById("stickerBook");
-  var stickerGrid = document.getElementById("stickerGrid");
-  var stickerCountEl = document.getElementById("stickerCount");
-  var stickerEmptyEl = document.getElementById("stickerEmpty");
-  var stickerClose = document.getElementById("stickerClose");
+  var levelPickerEl = document.getElementById("levelPicker");
+  var levelListEl = document.getElementById("levelList");
+  var levelClose = document.getElementById("levelClose");
 
   var entry = "";
   var locked = false;
@@ -1454,24 +1480,14 @@
   // try begins (reset, or after a wrong entry clears).
   var peekUsed = false;
   var wins = 0;
+  // Consecutive wrong entries, for the "an easier level is one tap away"
+  // nudge. Session-only; never persisted, never auto-demotes.
+  var failStreak = 0;
+  var struggleShown = false;
 
   var DIGIT_COLORS = [
     "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
     "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#65a30d"
-  ];
-
-  // Sticker artwork: one path each, drawn in a 24x24 box. Kept as plain
-  // data and built with createElementNS so nothing ever goes near
-  // innerHTML.
-  var STICKERS = [
-    { d: "M12 2.2l2.9 6.2 6.8.8-5 4.7 1.3 6.8L12 17.3 6 20.7l1.3-6.8-5-4.7 6.8-.8z", c: "#f59e0b" },
-    { d: "M12 21s-7.6-4.9-7.6-10.1A4.6 4.6 0 0 1 12 8.3a4.6 4.6 0 0 1 7.6 2.6C19.6 16.1 12 21 12 21z", c: "#ec4899" },
-    { d: "M13.4 2L4 14.2h5.6L8.8 22l9.4-12.2h-5.6z", c: "#f5c211" },
-    { d: "M12 2l7.2 10L12 22 4.8 12z", c: "#06b6d4" },
-    { d: "M15.6 2.6A9.4 9.4 0 1 0 21 15.4 7.4 7.4 0 0 1 15.6 2.6z", c: "#8b5cf6" },
-    { d: "M12 1.8l2.1 3.6 4-1.2-1.2 4 3.6 2.1-3.6 2.1 1.2 4-4-1.2L12 20l-2.1-3.6-4 1.2 1.2-4L3.5 11.5l3.6-2.1-1.2-4 4 1.2z", c: "#ef4444" },
-    { d: "M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 5.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z", c: "#22c55e" },
-    { d: "M12 2.4c1.7 0 2.6 1.3 3.9 1.7 1.3.4 3-.4 3.9.9.9 1.3-.2 2.8.2 4.1.4 1.3 1.9 2.1 1.9 3.6 0 1.5-1.5 2.3-1.9 3.6-.4 1.3.7 2.8-.2 4.1-.9 1.3-2.6.5-3.9.9-1.3.4-2.2 1.7-3.9 1.7s-2.6-1.3-3.9-1.7c-1.3-.4-3 .4-3.9-.9-.9-1.3.2-2.8-.2-4.1-.4-1.3-1.9-2.1-1.9-3.6 0-1.5 1.5-2.3 1.9-3.6.4-1.3-.7-2.8.2-4.1.9-1.3 2.6-.5 3.9-.9C9.4 3.7 10.3 2.4 12 2.4z", c: "#3b82f6" }
   ];
 
   function pick(arr)
@@ -1489,6 +1505,11 @@
     {
       return false;
     }
+  }
+
+  function anyModalOpen()
+  {
+    return !settingsEl.hidden || !celebrateEl.hidden || !levelPickerEl.hidden;
   }
 
   /* ---------- storage ---------- */
@@ -1538,14 +1559,13 @@
 
   /* ---------- preferences ----------
      Everything defaults to on except shuffle, so a missing key means
-     enabled and only an explicit "off" turns a feature off. Turning a
-     feature off never erases its progress - the level and the sticker
-     collection are simply not applied or shown. */
+     enabled and only an explicit "off" turns a feature off. Turning
+     levels off never erases the level reached - it is simply not
+     applied, and is waiting if they switch back on. */
   function hintsEnabled() { return readStored(HINTS_KEY) !== "off"; }
   function soundOn() { return readStored(SOUND_KEY) !== "off"; }
   function levelsOn() { return readStored(LEVELS_KEY) !== "off"; }
-  function stickersOn() { return readStored(STICKERS_ON_KEY) !== "off"; }
-  function shuffleOn() { return readStored(SHUFFLE_KEY) === "on"; }
+  function forceShuffle() { return readStored(SHUFFLE_KEY) === "on"; }
 
   function currentLevel()
   {
@@ -1557,10 +1577,27 @@
     return n;
   }
 
-  function setLevel(n)
+  // The level actually in force. With levels switched off nothing is
+  // gated: no guide light, Peek available, no shuffle.
+  function activeLevel()
+  {
+    return levelsOn() ? currentLevel() : 0;
+  }
+
+  function setLevel(n, announce)
   {
     writeStored(LEVEL_KEY, String(n));
     writeStored(STREAK_KEY, "0");
+    failStreak = 0;
+    struggleShown = false;
+    renderChip();
+    applyLevelUi();
+    relayout();
+    updateGuide();
+    if (announce)
+    {
+      flashMessage(T().levelSet(n), 2400);
+    }
   }
 
   function levelStreak()
@@ -1569,22 +1606,15 @@
     return n > 0 ? n : 0;
   }
 
-  function getStickers()
+  function shuffleActive()
   {
-    var s = readStored(STICKERS_KEY) || "";
-    return /^[0-9]*$/.test(s) ? s : "";
+    return forceShuffle() || activeLevel() >= SHUFFLE_LEVEL;
   }
 
-  function addSticker()
+  function peekAvailable()
   {
-    var id = (Math.random() * STICKERS.length) | 0;
-    var s = getStickers() + String(id);
-    if (s.length > MAX_STICKERS)
-    {
-      s = s.slice(s.length - MAX_STICKERS);
-    }
-    writeStored(STICKERS_KEY, s);
-    return id;
+    var lvl = activeLevel();
+    return !(lvl >= NO_PEEK_LEVEL);
   }
 
   function renderSoundBtn()
@@ -1616,39 +1646,86 @@
   }
 
   /* ---------- header chip ----------
-     Shows the sticker count when stickers are on (and opens the book),
-     the level when only levels are on, and falls back to the plain
-     session win count when both are off - so the chip never disappears
-     entirely and never shows two competing scores at once. */
+     Shows the level and opens the picker when levels are on; falls back
+     to the plain session win count when they are off, so the chip never
+     shows two competing scores and never sits there doing nothing. */
   function renderChip()
   {
-    var parts = [];
-    var clickable = false;
     if (levelsOn())
     {
-      parts.push(T().levelShort(currentLevel()));
-    }
-    if (stickersOn())
-    {
-      parts.push("🏅 " + getStickers().length);
-      clickable = true;
-    }
-    else if (!levelsOn() && wins > 0)
-    {
-      parts.push("⭐ " + wins);
-    }
-    chipEl.textContent = parts.join("  ");
-    chipEl.setAttribute("data-clickable", clickable ? "1" : "0");
-    if (clickable)
-    {
-      chipEl.setAttribute("aria-label", T().stickerBookAria(getStickers().length));
+      var n = currentLevel();
+      chipEl.textContent = T().levelShort(n);
+      chipEl.setAttribute("data-clickable", "1");
+      chipEl.setAttribute("aria-label", T().levelAria(n));
       chipEl.removeAttribute("tabindex");
     }
     else
     {
+      chipEl.textContent = wins > 0 ? "⭐ " + wins : "";
+      chipEl.setAttribute("data-clickable", "0");
       chipEl.removeAttribute("aria-label");
       chipEl.setAttribute("tabindex", "-1");
     }
+  }
+
+  // Peek disappears from level 4 up - that is the whole point of that
+  // rung. Hidden rather than disabled so it does not sit there as a
+  // temptation.
+  function applyLevelUi()
+  {
+    hintBtn.hidden = !peekAvailable();
+  }
+
+  /* ---------- level picker ---------- */
+  function buildLevelList()
+  {
+    var t = T();
+    var here = currentLevel();
+    while (levelListEl.firstChild)
+    {
+      levelListEl.removeChild(levelListEl.firstChild);
+    }
+    for (var i = 1; i <= MAX_LEVEL; i++)
+    {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "level-option";
+      btn.setAttribute("data-level", String(i));
+      if (i === here)
+      {
+        btn.setAttribute("aria-current", "true");
+      }
+      var name = document.createElement("b");
+      name.textContent = i + " · " + t.levelNames[i - 1];
+      var blurb = document.createElement("small");
+      blurb.textContent = t.levelBlurbs[i - 1];
+      btn.appendChild(name);
+      btn.appendChild(blurb);
+      levelListEl.appendChild(btn);
+    }
+  }
+
+  function openLevelPicker()
+  {
+    buildLevelList();
+    clearGuide();
+    clearIdleHint();
+    levelPickerEl.hidden = false;
+    window.setTimeout(function ()
+    {
+      var card = levelPickerEl.querySelector(".modal__card");
+      if (card)
+      {
+        card.focus();
+      }
+    }, 50);
+  }
+
+  function closeLevelPicker()
+  {
+    levelPickerEl.hidden = true;
+    touchIdle();
+    updateGuide();
   }
 
   /* ---------- language ---------- */
@@ -1712,11 +1789,7 @@
       }
     }
 
-    for (var n = 0; n < levelSelect.options.length; n++)
-    {
-      levelSelect.options[n].textContent = (n + 1) + " · " + t.levelNames[n];
-    }
-
+    openLevelsBtn.textContent = t.changeLevel;
     document.title = t.title;
     langSelect.value = uiLang;
     renderSoundBtn();
@@ -1742,8 +1815,7 @@
   /* ---------- keypad layout ---------- */
   function digitKeys()
   {
-    var all = keypadEl.querySelectorAll(".key:not(.key--action)");
-    return all;
+    return keypadEl.querySelectorAll(".key:not(.key--action)");
   }
 
   // Paints a digit onto a key: value, label and both of its colours (the
@@ -1774,10 +1846,11 @@
     return "rgb(" + r + "," + g + "," + b + ")";
   }
 
-  // Standard 1-9 then 0 order, or a random arrangement when shuffle is
-  // on. Shuffling is what separates "knows the numbers" from "knows the
-  // finger path" - a child who only learned the shape freezes on a
-  // keypad laid out differently, which is exactly what a real door has.
+  // Standard 1-9 then 0 order, or a random arrangement at level 5 (or
+  // whenever the always-shuffle switch is on). Shuffling is what
+  // separates "knows the numbers" from "knows the finger path" - a child
+  // who only learned the shape freezes on a keypad laid out
+  // differently, which is exactly what a real door has.
   function layoutKeys(randomise)
   {
     var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
@@ -1800,7 +1873,7 @@
 
   function relayout()
   {
-    layoutKeys(shuffleOn());
+    layoutKeys(shuffleActive());
   }
 
   /* ---------- entry display ---------- */
@@ -1876,6 +1949,10 @@
     if (e && e.cancelable)
     {
       e.preventDefault();
+    }
+    if (!peekAvailable())
+    {
+      return;
     }
     if (peekUsed)
     {
@@ -2002,9 +2079,9 @@
 
   function startEyes()
   {
-    // Nothing to animate once the peek is spent - those eyes are shut
-    // until the next try re-arms the button.
-    if (!eyesEl || reducedMotion() || peekUsed)
+    // Nothing to animate once the peek is spent (or hidden by the
+    // level) - those eyes are shut until the next try re-arms them.
+    if (!eyesEl || reducedMotion() || peekUsed || !peekAvailable())
     {
       return;
     }
@@ -2387,9 +2464,9 @@
   }
 
   /* ---------- guide light (practice levels) ----------
-     Level 1 lights the next key straight away, level 2 waits a beat so
-     there is a real chance to recall first, level 3 shows nothing at
-     all. Only ever the NEXT key, never the whole PIN. */
+     Level 1 lights the next key at once, level 2 waits a beat so there
+     is a real chance to recall first, level 3 and up show nothing. Only
+     ever the NEXT key, never the whole PIN. */
   var guideEl = null;
   var guideTimer = null;
 
@@ -2407,16 +2484,8 @@
   function updateGuide()
   {
     clearGuide();
-    if (!levelsOn() || locked || peeking || entry.length >= LEN)
-    {
-      return;
-    }
-    if (!settingsEl.hidden || !celebrateEl.hidden || !stickerBookEl.hidden)
-    {
-      return;
-    }
-    var level = currentLevel();
-    if (level >= MAX_LEVEL)
+    var level = activeLevel();
+    if (level < 1 || level > 2 || locked || peeking || entry.length >= LEN || anyModalOpen())
     {
       return;
     }
@@ -2476,11 +2545,10 @@
 
   function runIdleHint()
   {
-    // Anything else going on (celebrating, mid-shake, peeking, settings
+    // Anything else going on (celebrating, mid-shake, peeking, a modal
     // open) means this is not idle time - wait and look again. The level
     // guide already points at the same key, so skip the wave then too.
-    if (locked || peeking || !settingsEl.hidden || !celebrateEl.hidden ||
-        !stickerBookEl.hidden || entry.length >= LEN || guideEl)
+    if (locked || peeking || anyModalOpen() || entry.length >= LEN || guideEl)
     {
       scheduleIdleHint(IDLE_REPEAT_MS);
       return;
@@ -2530,69 +2598,6 @@
     echoEl.classList.remove("echo--go");
     void echoEl.offsetWidth;
     echoEl.classList.add("echo--go");
-  }
-
-  /* ---------- stickers ---------- */
-  function makeStickerSvg(id, size)
-  {
-    var NS = "http://www.w3.org/2000/svg";
-    var def = STICKERS[id] || STICKERS[0];
-    var svg = document.createElementNS(NS, "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("aria-hidden", "true");
-    svg.setAttribute("focusable", "false");
-    if (size)
-    {
-      svg.setAttribute("width", String(size));
-      svg.setAttribute("height", String(size));
-    }
-    var path = document.createElementNS(NS, "path");
-    path.setAttribute("d", def.d);
-    path.setAttribute("fill", def.c);
-    path.setAttribute("fill-rule", "evenodd");
-    svg.appendChild(path);
-    return svg;
-  }
-
-  function renderStickerBook()
-  {
-    var s = getStickers();
-    while (stickerGrid.firstChild)
-    {
-      stickerGrid.removeChild(stickerGrid.firstChild);
-    }
-    for (var i = 0; i < s.length; i++)
-    {
-      var slot = document.createElement("div");
-      slot.className = "sticker-slot";
-      slot.appendChild(makeStickerSvg(Number(s.charAt(i))));
-      stickerGrid.appendChild(slot);
-    }
-    stickerCountEl.textContent = T().stickerCount(s.length);
-    stickerEmptyEl.hidden = s.length > 0;
-    stickerCountEl.hidden = s.length === 0;
-  }
-
-  function openStickerBook()
-  {
-    renderStickerBook();
-    clearGuide();
-    stickerBookEl.hidden = false;
-    window.setTimeout(function ()
-    {
-      var card = stickerBookEl.querySelector(".modal__card");
-      if (card)
-      {
-        card.focus();
-      }
-    }, 50);
-  }
-
-  function closeStickerBook()
-  {
-    stickerBookEl.hidden = true;
-    updateGuide();
-    touchIdle();
   }
 
   /* ---------- game ---------- */
@@ -2676,22 +2681,35 @@
     encourage();
     buzz([40, 70, 40]);
     // A wrong entry never demotes a level - being sent backwards reads
-    // as punishment. Only the streak toward the NEXT level resets.
+    // as punishment. Only the streak toward the NEXT level resets, and
+    // after a few in a row we point out that an easier level is one tap
+    // away and let a grown-up decide.
+    failStreak += 1;
     if (levelsOn())
     {
       writeStored(STREAK_KEY, "0");
     }
+    var struggling = levelsOn() && currentLevel() > 1 &&
+                     failStreak >= STRUGGLE_FAILS && !struggleShown;
     window.setTimeout(function ()
     {
       dotsEl.classList.remove("shake");
       entry = "";
       renderDots();
-      hint();
       armPeek();
       relayout();
       locked = false;
       touchIdle();
       updateGuide();
+      if (struggling)
+      {
+        struggleShown = true;
+        flashMessage(T().struggling, 3800);
+      }
+      else
+      {
+        hint();
+      }
     }, 900);
   }
 
@@ -2701,6 +2719,7 @@
     clearIdleHint();
     clearGuide();
     wins += 1;
+    failStreak = 0;
     renderDots("win");
 
     var leveledUp = false;
@@ -2710,7 +2729,9 @@
       var level = currentLevel();
       if (streak >= LEVEL_UP_STREAK && level < MAX_LEVEL)
       {
-        setLevel(level + 1);
+        writeStored(LEVEL_KEY, String(level + 1));
+        writeStored(STREAK_KEY, "0");
+        struggleShown = false;
         leveledUp = true;
       }
       else
@@ -2720,23 +2741,6 @@
     }
 
     celebrateLine.textContent = pick(T().winLines);
-
-    while (stickerPrize.firstChild)
-    {
-      stickerPrize.removeChild(stickerPrize.firstChild);
-    }
-    if (stickersOn())
-    {
-      var id = addSticker();
-      var svg = makeStickerSvg(id);
-      svg.setAttribute("class", "sticker-prize");
-      stickerPrize.appendChild(svg);
-      stickerPrize.hidden = false;
-    }
-    else
-    {
-      stickerPrize.hidden = true;
-    }
 
     if (leveledUp)
     {
@@ -2749,6 +2753,7 @@
     }
 
     renderChip();
+    applyLevelUi();
     celebrateEl.hidden = false;
     launchConfetti();
     window.setTimeout(launchConfetti, 450);
@@ -2768,6 +2773,7 @@
     locked = false;
     celebrateEl.hidden = true;
     stopSpeech();
+    applyLevelUi();
     relayout();
     renderDots();
     hint();
@@ -2871,10 +2877,8 @@
   {
     hintsToggle.checked = hintsEnabled();
     levelsToggle.checked = levelsOn();
-    stickersToggle.checked = stickersOn();
-    shuffleToggle.checked = shuffleOn();
-    levelSelect.value = String(currentLevel());
-    // The level picker is meaningless with levels switched off, so it
+    shuffleToggle.checked = forceShuffle();
+    // The level button is meaningless with levels switched off, so it
     // goes away rather than sitting there inert.
     levelSelectRow.hidden = !levelsOn();
   }
@@ -2982,16 +2986,40 @@
   {
     if (chipEl.getAttribute("data-clickable") === "1")
     {
-      openStickerBook();
+      openLevelPicker();
     }
   });
 
-  stickerClose.addEventListener("click", closeStickerBook);
-  stickerBookEl.addEventListener("click", function (e)
+  openLevelsBtn.addEventListener("click", openLevelPicker);
+  levelClose.addEventListener("click", closeLevelPicker);
+
+  levelListEl.addEventListener("click", function (e)
   {
-    if (e.target === stickerBookEl)
+    var btn = e.target.closest ? e.target.closest(".level-option") : null;
+    if (!btn)
     {
-      closeStickerBook();
+      return;
+    }
+    var n = parseInt(btn.getAttribute("data-level"), 10);
+    if (n >= 1 && n <= MAX_LEVEL)
+    {
+      setLevel(n, true);
+      // Start the try fresh at the new level rather than half way
+      // through one under the old rules.
+      entry = "";
+      renderDots();
+      armPeek();
+      relayout();
+      updateGuide();
+      closeLevelPicker();
+    }
+  });
+
+  levelPickerEl.addEventListener("click", function (e)
+  {
+    if (e.target === levelPickerEl)
+    {
+      closeLevelPicker();
     }
   });
 
@@ -3067,24 +3095,9 @@
     writeStored(LEVELS_KEY, levelsToggle.checked ? "on" : "off");
     syncSettingsControls();
     renderChip();
+    applyLevelUi();
+    relayout();
     clearGuide();
-  });
-
-  levelSelect.addEventListener("change", function ()
-  {
-    var n = parseInt(levelSelect.value, 10);
-    if (n >= 1 && n <= MAX_LEVEL)
-    {
-      setLevel(n);
-      renderChip();
-    }
-  });
-
-  stickersToggle.addEventListener("change", function ()
-  {
-    // Same again: off hides the collection, it is never deleted.
-    writeStored(STICKERS_ON_KEY, stickersToggle.checked ? "on" : "off");
-    renderChip();
   });
 
   shuffleToggle.addEventListener("change", function ()
@@ -3157,11 +3170,11 @@
       }
       return;
     }
-    if (!stickerBookEl.hidden)
+    if (!levelPickerEl.hidden)
     {
-      if (e.key === "Escape" || e.key === "Enter")
+      if (e.key === "Escape")
       {
-        closeStickerBook();
+        closeLevelPicker();
       }
       return;
     }
@@ -3228,6 +3241,7 @@
   relayout();
   buildDots();
   applyLang();
+  applyLevelUi();
   syncSettingsControls();
   startEyes();
   touchIdle();

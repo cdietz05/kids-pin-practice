@@ -11,13 +11,14 @@ A big, friendly, touch-first keypad for helping a young child memorize a
   pressed, flashes huge on screen, is spoken aloud ("three!"), plays a short
   pitched blip, and buzzes on devices with a vibration motor.
 - **Six dots** fill as digits go in.
-- **Correct PIN** → confetti, a happy chord, a spoken cheer, a "YOU DID IT!"
-  card with **Practice Again**, and a ⭐ counter of wins this session.
+- **Correct PIN** → confetti, a happy chord, a spoken cheer, and a "YOU DID
+  IT!" card with **Practice Again**.
 - **Wrong PIN** → a gentle shake and a spoken encouragement ("So close! Give
   it another try."), then it clears itself. No scary red X.
 - **👀 Peek** reveals the PIN under the dots while the button is held —
-  **once per try**. It re-arms on the next attempt. Its eyes glance around and
-  blink on their own, get busy while it's held, and shut once it's been used.
+  **once per try**. It re-arms on the next attempt, and disappears from level 4
+  up. Its eyes glance around and blink on their own, get busy while it's held,
+  and shut once it's been used.
 - **Idle nudge.** Sit still mid-entry for ~7s and the key holding the *next*
   digit gives a little wave, repeating every ~5s until they press something.
   It only ever points at the digit they're up to, so it never gives the whole
@@ -25,41 +26,44 @@ A big, friendly, touch-first keypad for helping a young child memorize a
 - **🔊 Mute** button next to the gear on the main screen silences the digits,
   cheers and blips without opening Settings.
 
-## Practice levels
-
-Help fades as they improve. Three rungs, auto-advancing after **3 correct in
-a row**; a wrong entry resets the streak but **never demotes** them.
-
-| Level | | |
-| --- | --- | --- |
-| 1 | **Follow the lights** | The next key lights up immediately |
-| 2 | **Try first** | The next key lights up after ~1.6s, so they get a real go at recalling it |
-| 3 | **All by myself** | No light — only the idle nudge, if that's on |
-
-It only ever lights the digit they're *up to*, never the whole PIN.
-
-**Shuffle the keypad** is a separate switch, not a level. Kids memorize the
-*finger path*, not the numbers — a shuffled pad is the only way to prove real
-recall, and it's what a real door looks like. Off by default.
-
-## Stickers
-
-One sticker per success, plopped onto the win screen and collected in a
-sticker book (tap the 🏅 chip in the header). Eight shapes, drawn in the app's
-own palette.
-
-## Turning it off
-
-**Practice levels** and **Sticker rewards** are independent switches in
-Settings — some households want stickers without the training wheels, or the
-reverse. With both off the app behaves exactly as it did before they existed.
-
-Switching either off **hides, never deletes**: the level they'd reached and
-the whole sticker collection are waiting if it gets switched back on.
 - Fits portrait phones, landscape phones (two-column layout), and tablets.
   Light and dark themes. Honors `prefers-reduced-motion`.
 - Installable to a home screen (web app manifest) for a full-screen,
   kiosk-like experience on a kid's tablet.
+
+## Practice levels
+
+Five rungs, each removing a little more help. It auto-advances after **3
+correct in a row** and **never demotes** — a wrong entry just resets the
+streak toward the next level.
+
+| | Level | What changes |
+| --- | --- | --- |
+| 1 | **Follow the lights** | The next key lights up straight away — just follow it |
+| 2 | **Try first** | The next key lights up after ~1.6s, so there's a chance to remember it first |
+| 3 | **On your own** | No lights. Peek is there if it's needed |
+| 4 | **No peeking** | No lights and no Peek button — all from memory |
+| 5 | **Mix it up** | The keys move around every try |
+
+It only ever lights the digit they're *up to*, never the whole PIN.
+
+**Level 5 matters most.** Kids memorize the *finger path*, not the numbers —
+a child who only learned the shape freezes on a keypad laid out differently,
+which is exactly what a real door has. There's also an **Always shuffle**
+switch in Settings if you want that at any level.
+
+### Going back down
+
+Tap the **level chip** in the header — one tap, no hold-gate, since dropping
+back when a child is struggling has to be quick and there's nothing here worth
+protecting. Pick any level; it takes effect on the next try.
+
+After 3 wrong entries in a row it quietly points at that chip, but it never
+moves them down on its own.
+
+Levels can be switched off entirely under **Settings → Practice levels**. That
+**hides, never deletes** — the level they'd reached is waiting if it's switched
+back on.
 
 ## Setting the PIN
 
