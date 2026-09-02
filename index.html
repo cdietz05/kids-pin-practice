@@ -414,7 +414,46 @@
     transition: transform 90ms ease, box-shadow 90ms ease, filter 90ms ease, background-color 150ms ease;
   }
 
-  .peek-btn .peek-eye { font-size: 1.25em; line-height: 1; }
+  /* Real drawn eyes rather than the 👀 emoji - an emoji is one glyph,
+     so its pupils can't look around and its lids can't close. */
+  .peek-eyes
+  {
+    width: 2.15em;
+    height: 1.27em;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .peek-eyes .sclera
+  {
+    fill: #ffffff;
+    stroke: #5a3d00;
+    stroke-width: 1.5;
+  }
+
+  .peek-eyes .pupil
+  {
+    transition: transform 300ms cubic-bezier(0.34, 1.35, 0.5, 1);
+  }
+
+  .peek-eyes .iris { fill: #3a2a00; }
+  .peek-eyes .glint { fill: #ffffff; opacity: 0.9; }
+
+  /* Guarded: without fill-box the scale would pivot on the SVG origin
+     and fling the eyes off the button instead of blinking them. */
+  @supports (transform-box: fill-box)
+  {
+    .peek-eyes .eye
+    {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 85ms ease;
+    }
+
+    .peek-eyes.is-blinking .eye { transform: scaleY(0.08); }
+  }
+
+  .peek-btn.is-spent .peek-eyes { opacity: 0.75; }
 
   .peek-btn:active
   {
@@ -837,7 +876,7 @@
   </div>
 
   <div class="footer-actions">
-    <button id="hintBtn" class="peek-btn" type="button" data-i18n-aria="peekAria" aria-label="Hold to peek at the PIN"><span class="peek-eye" aria-hidden="true">&#128064;</span><span data-i18n="peek">Peek</span></button>
+    <button id="hintBtn" class="peek-btn" type="button" data-i18n-aria="peekAria" aria-label="Hold to peek at the PIN"><svg id="peekEyes" class="peek-eyes" viewBox="0 0 44 26" aria-hidden="true" focusable="false"><g class="eye"><ellipse class="sclera" cx="11.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="11.5" cy="13" r="4.4"/><circle class="glint" cx="13.2" cy="11.1" r="1.5"/></g></g><g class="eye"><ellipse class="sclera" cx="32.5" cy="13" rx="9.5" ry="11.5"/><g class="pupil"><circle class="iris" cx="32.5" cy="13" r="4.4"/><circle class="glint" cx="34.2" cy="11.1" r="1.5"/></g></g></svg><span data-i18n="peek">Peek</span></button>
     <button id="restartBtn" class="restart restart--ghost" type="button" data-i18n="startOver">Start over</button>
   </div>
 </main>
@@ -1286,6 +1325,120 @@
     starsEl.textContent = wins > 0 ? "⭐ " + wins : "";
   }
 
+  /* ---------- peek button eyes ----------
+     The eyes glance around and blink on their own timers (not CSS
+     keyframes) so the intervals can be randomised - a fixed loop reads
+     as a machine, irregular timing reads as alive. Both timers switch to
+     much shorter ranges while the button is held, so the eyes get busy
+     exactly while the child is looking at the PIN. */
+  var eyesEl = document.getElementById("peekEyes");
+  var pupils = eyesEl ? eyesEl.querySelectorAll(".pupil") : [];
+  var lookTimer = null;
+  var blinkTimer = null;
+  var eyesFast = false;
+
+  function rand(min, max)
+  {
+    return min + Math.random() * (max - min);
+  }
+
+  function moveEyes(recentre)
+  {
+    var x = 0;
+    var y = 0;
+    if (!recentre)
+    {
+      var angle = rand(0, Math.PI * 2);
+      var reach = rand(0.8, 2.7);
+      x = Math.cos(angle) * reach;
+      // Squashed vertically - eyes have far more room side to side than
+      // up and down before the pupil rides out of the sclera.
+      y = Math.sin(angle) * reach * 0.62;
+    }
+    var value = "translate(" + x.toFixed(2) + "px," + y.toFixed(2) + "px)";
+    for (var i = 0; i < pupils.length; i++)
+    {
+      pupils[i].style.transform = value;
+    }
+  }
+
+  function scheduleLook()
+  {
+    window.clearTimeout(lookTimer);
+    var delay = eyesFast ? rand(340, 850) : rand(1900, 4400);
+    lookTimer = window.setTimeout(function ()
+    {
+      moveEyes(false);
+      scheduleLook();
+    }, delay);
+  }
+
+  function doBlink(times)
+  {
+    if (!eyesEl)
+    {
+      return;
+    }
+    eyesEl.classList.add("is-blinking");
+    window.setTimeout(function ()
+    {
+      eyesEl.classList.remove("is-blinking");
+      if (times > 1)
+      {
+        window.setTimeout(function () { doBlink(times - 1); }, 120);
+      }
+    }, 115);
+  }
+
+  function scheduleBlink()
+  {
+    window.clearTimeout(blinkTimer);
+    var delay = eyesFast ? rand(550, 1400) : rand(2600, 6400);
+    blinkTimer = window.setTimeout(function ()
+    {
+      doBlink(Math.random() < 0.25 ? 2 : 1);
+      scheduleBlink();
+    }, delay);
+  }
+
+  function startEyes()
+  {
+    if (!eyesEl || reducedMotion())
+    {
+      return;
+    }
+    scheduleLook();
+    scheduleBlink();
+  }
+
+  function stopEyes()
+  {
+    window.clearTimeout(lookTimer);
+    window.clearTimeout(blinkTimer);
+    lookTimer = null;
+    blinkTimer = null;
+  }
+
+  function setEyesFast(on)
+  {
+    eyesFast = on;
+    if (!eyesEl || reducedMotion())
+    {
+      return;
+    }
+    if (on)
+    {
+      moveEyes(false);
+      doBlink(1);
+    }
+    else
+    {
+      moveEyes(true);
+    }
+    scheduleLook();
+    scheduleBlink();
+  }
+
   /* ---------- peek ---------- */
   function armPeek()
   {
@@ -1322,6 +1475,7 @@
     }
     dotsEl.classList.add("dots--peek");
     hintBtn.classList.add("is-peeking");
+    setEyesFast(true);
   }
 
   function peekHide()
@@ -1333,6 +1487,7 @@
     peeking = false;
     dotsEl.classList.remove("dots--peek");
     hintBtn.classList.remove("is-peeking");
+    setEyesFast(false);
     if (peekUsed)
     {
       hintBtn.classList.add("is-spent");
@@ -2115,6 +2270,11 @@
     {
       peekHide();
       stopSpeech();
+      stopEyes();
+    }
+    else
+    {
+      startEyes();
     }
   });
 
@@ -2144,6 +2304,7 @@
   buildDots();
   applyLang();
   renderStars();
+  startEyes();
 
   if (hasSpeech())
   {
