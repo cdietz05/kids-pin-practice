@@ -171,13 +171,25 @@
      rotate - a rounded square spun 180 degrees lands looking exactly
      like where it started, which is what made the old wind-up
      invisible. */
-  .icon-btn .gear
+  .icon-btn > span
   {
     position: relative;
     z-index: 1;
     display: inline-block;
     line-height: 1;
-    transition: transform 180ms ease;
+  }
+
+  .icon-btn .gear { transition: transform 180ms ease; }
+
+  .icon-btn.is-muted { color: var(--muted); }
+  .icon-btn.is-muted > span { opacity: 0.7; }
+
+  .header-actions
+  {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
   }
 
   .icon-btn::after
@@ -334,6 +346,27 @@
   }
 
   .key--pop { animation: keyPop 320ms ease; }
+
+  /* Idle nudge: after a while sitting still, the key for the next digit
+     waves to say "this one". Deliberately smaller and slower than the
+     press pop so it reads as a suggestion, not a button firing. */
+  @keyframes keyNudge
+  {
+    0%, 100% { transform: none; }
+    12% { transform: translateY(-7px) rotate(-4deg); }
+    28% { transform: translateY(0) rotate(3deg); }
+    44% { transform: translateY(-4px) rotate(-2deg); }
+    62% { transform: translateY(0) rotate(1deg); }
+    80% { transform: translateY(-2px) rotate(0deg); }
+  }
+
+  @keyframes keyGlow
+  {
+    0%, 100% { filter: none; }
+    50% { filter: brightness(1.35); }
+  }
+
+  .key--hint { animation: keyNudge 1s ease; }
 
   .echo
   {
@@ -630,7 +663,7 @@
     margin-bottom: 14px;
   }
 
-  .modal input,
+  .modal input[type="text"],
   .modal select
   {
     display: block;
@@ -647,11 +680,32 @@
     caret-color: #10192e;
   }
 
-  .modal input
+  .modal input[type="text"]
   {
     font-size: 1.7rem;
     letter-spacing: 0.4em;
     text-align: center;
+  }
+
+  .toggle-row
+  {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    cursor: pointer;
+  }
+
+  .toggle-row input
+  {
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0;
+    flex: 0 0 auto;
+    accent-color: var(--accent);
   }
 
   .modal select
@@ -661,7 +715,7 @@
     text-align: left;
   }
 
-  .modal input::placeholder
+  .modal input[type="text"]::placeholder
   {
     color: #9aa4c0;
     -webkit-text-fill-color: #9aa4c0;
@@ -864,6 +918,9 @@
     /* The rising fill is a progress indicator, not decoration, so it
        stays - only the glyph's spin is dropped. */
     .icon-btn.is-holding .gear { transition: none; transform: none; }
+    /* The idle nudge still has to be noticeable - swap the wave for a
+       brightness pulse rather than dropping the hint entirely. */
+    .key--hint { animation: keyGlow 1.2s ease !important; }
   }
 </style>
 </head>
@@ -875,7 +932,10 @@
     <header>
       <h1 data-i18n="title">PIN Practice</h1>
       <p id="stars" class="stars" aria-live="polite"></p>
-      <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings"><span class="gear" aria-hidden="true">&#9881;&#65039;</span></button>
+      <div class="header-actions">
+        <button id="soundBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="Sound on"><span id="soundIcon" aria-hidden="true">&#128266;</span></button>
+        <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings"><span class="gear" aria-hidden="true">&#9881;&#65039;</span></button>
+      </div>
     </header>
 
     <div id="dots" class="dots" role="img" aria-label="No digits entered yet"></div>
@@ -939,6 +999,11 @@
       <select id="voiceSelect"></select>
     </label>
 
+    <label class="toggle-row" for="hintsToggle">
+      <input id="hintsToggle" type="checkbox" checked>
+      <span data-i18n="hintsLabel">Wiggle the next key if they get stuck</span>
+    </label>
+
     <p id="settingsMsg" class="settings-msg" aria-live="polite"></p>
 
     <div class="modal__actions">
@@ -965,9 +1030,15 @@
   var STORE_KEY = "pinPractice.target.v1";
   var LANG_KEY = "pinPractice.lang.v1";
   var VOICE_KEY_PREFIX = "pinPractice.voice.";
+  var HINTS_KEY = "pinPractice.hints.v1";
+  var SOUND_KEY = "pinPractice.sound.v1";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
   var HOLD_MS = 800;
+  // How long the keypad sits untouched before the next key waves, and
+  // how often it waves again after that.
+  var IDLE_FIRST_MS = 7000;
+  var IDLE_REPEAT_MS = 5000;
 
   /* ---------- copy, per language ----------
      Every visible string and every spoken line lives here so a language
@@ -992,6 +1063,11 @@
       confirmPin: "Confirm PIN",
       language: "Language",
       voice: "Voice",
+      hintsLabel: "Wiggle the next key if they get stuck",
+      soundOnLabel: "Sound is on — tap to mute",
+      soundOffLabel: "Sound is off — tap to unmute",
+      soundMuted: "Sound off 🔇",
+      soundUnmuted: "Sound on 🔊",
       test: "Test",
       cancel: "Cancel",
       savePin: "Save PIN",
@@ -1050,6 +1126,11 @@
       confirmPin: "Confirmar PIN",
       language: "Idioma",
       voice: "Voz",
+      hintsLabel: "Mover la siguiente tecla si se atora",
+      soundOnLabel: "El sonido está encendido — toca para silenciar",
+      soundOffLabel: "El sonido está apagado — toca para activarlo",
+      soundMuted: "Sonido apagado 🔇",
+      soundUnmuted: "Sonido encendido 🔊",
       test: "Probar",
       cancel: "Cancelar",
       savePin: "Guardar PIN",
@@ -1130,6 +1211,9 @@
   var voiceSelect = document.getElementById("voiceSelect");
   var voiceTest = document.getElementById("voiceTest");
   var langSelect = document.getElementById("langSelect");
+  var hintsToggle = document.getElementById("hintsToggle");
+  var soundBtn = document.getElementById("soundBtn");
+  var soundIcon = document.getElementById("soundIcon");
 
   var entry = "";
   var locked = false;
@@ -1206,6 +1290,47 @@
     return !(v && /^[0-9]{6}$/.test(v));
   }
 
+  /* ---------- preferences ---------- */
+  // Both default to on, so a missing key means enabled and only an
+  // explicit "off" turns either feature off.
+  function hintsEnabled()
+  {
+    return readStored(HINTS_KEY) !== "off";
+  }
+
+  function soundOn()
+  {
+    return readStored(SOUND_KEY) !== "off";
+  }
+
+  function renderSoundBtn()
+  {
+    var on = soundOn();
+    soundIcon.textContent = on ? "🔊" : "🔇";
+    soundBtn.classList.toggle("is-muted", !on);
+    soundBtn.setAttribute("aria-pressed", on ? "false" : "true");
+    soundBtn.setAttribute("aria-label", on ? T().soundOnLabel : T().soundOffLabel);
+    soundBtn.setAttribute("title", on ? T().soundOnLabel : T().soundOffLabel);
+  }
+
+  function toggleSound()
+  {
+    var next = soundOn() ? "off" : "on";
+    writeStored(SOUND_KEY, next);
+    if (next === "off")
+    {
+      stopSpeech();
+    }
+    renderSoundBtn();
+    flashMessage(next === "off" ? T().soundMuted : T().soundUnmuted, 1600);
+    if (next === "on")
+    {
+      // Immediate proof it is back, and it doubles as the user gesture
+      // that unlocks the AudioContext on mobile.
+      blip(5);
+    }
+  }
+
   /* ---------- language ---------- */
   function initialLang()
   {
@@ -1269,6 +1394,7 @@
 
     document.title = t.title;
     langSelect.value = uiLang;
+    renderSoundBtn();
     renderDots();
     renderPinStatus();
     hint();
@@ -1529,6 +1655,7 @@
       stopEyes();
     }
     hint();
+    touchIdle();
   }
 
   /* ---------- audio ---------- */
@@ -1539,6 +1666,12 @@
 
   function ac()
   {
+    // Single gate for every generated sound - the mute button only has
+    // to flip one preference.
+    if (!soundOn())
+    {
+      return null;
+    }
     try
     {
       if (!audioCtx)
@@ -1788,7 +1921,7 @@
   // being clipped by the cheer that follows it.
   function speak(text, rate, pitch, queue)
   {
-    if (!hasSpeech() || !text)
+    if (!hasSpeech() || !text || !soundOn())
     {
       return;
     }
@@ -1849,6 +1982,73 @@
     catch (e) {}
   }
 
+  /* ---------- idle nudge ----------
+     Sat still mid-entry for a while? The key holding the next digit
+     waves. It only ever points at the digit they are actually up to, so
+     it never gives the whole PIN away the way Peek does - and unlike
+     Peek it costs them nothing, so it stays available all try. */
+  var idleTimer = null;
+  var hintKeyEl = null;
+  var hintClearTimer = null;
+
+  function clearIdleHint()
+  {
+    window.clearTimeout(idleTimer);
+    idleTimer = null;
+    window.clearTimeout(hintClearTimer);
+    hintClearTimer = null;
+    if (hintKeyEl)
+    {
+      hintKeyEl.classList.remove("key--hint");
+      hintKeyEl = null;
+    }
+  }
+
+  function scheduleIdleHint(delay)
+  {
+    window.clearTimeout(idleTimer);
+    idleTimer = null;
+    if (!hintsEnabled())
+    {
+      return;
+    }
+    idleTimer = window.setTimeout(runIdleHint, delay);
+  }
+
+  function runIdleHint()
+  {
+    // Anything else going on (celebrating, mid-shake, peeking, settings
+    // open) means this is not idle time - wait and look again.
+    if (locked || peeking || !settingsEl.hidden || !celebrateEl.hidden || entry.length >= LEN)
+    {
+      scheduleIdleHint(IDLE_REPEAT_MS);
+      return;
+    }
+    var nextDigit = getTarget().charAt(entry.length);
+    var el = keypadEl.querySelector('.key[data-key="' + nextDigit + '"]');
+    if (el)
+    {
+      hintKeyEl = el;
+      el.classList.remove("key--hint");
+      void el.offsetWidth;
+      el.classList.add("key--hint");
+      window.clearTimeout(hintClearTimer);
+      hintClearTimer = window.setTimeout(function ()
+      {
+        el.classList.remove("key--hint");
+        hintKeyEl = null;
+      }, 1300);
+    }
+    scheduleIdleHint(IDLE_REPEAT_MS);
+  }
+
+  // Called from anything that counts as activity - restarts the clock.
+  function touchIdle()
+  {
+    clearIdleHint();
+    scheduleIdleHint(IDLE_FIRST_MS);
+  }
+
   /* ---------- key feedback ---------- */
   function bumpKey(key)
   {
@@ -1878,6 +2078,7 @@
     {
       return;
     }
+    touchIdle();
     if (key === "back")
     {
       bumpKey("back");
@@ -1936,6 +2137,7 @@
   function fail()
   {
     locked = true;
+    clearIdleHint();
     renderDots("wrong");
     dotsEl.classList.add("shake");
     setMessage(T().almost);
@@ -1950,12 +2152,14 @@
       hint();
       armPeek();
       locked = false;
+      touchIdle();
     }, 900);
   }
 
   function win()
   {
     locked = true;
+    clearIdleHint();
     wins += 1;
     renderStars();
     renderDots("win");
@@ -1978,6 +2182,7 @@
     renderDots();
     hint();
     armPeek();
+    touchIdle();
   }
 
   /* ---------- confetti ---------- */
@@ -2078,7 +2283,9 @@
     settingsMsg.removeAttribute("data-ok");
     renderPinStatus();
     langSelect.value = uiLang;
+    hintsToggle.checked = hintsEnabled();
     loadVoices();
+    clearIdleHint();
     settingsEl.hidden = false;
     window.setTimeout(function () { pinInput.focus(); }, 50);
   }
@@ -2089,6 +2296,7 @@
     pinInput.value = "";
     pinConfirm.value = "";
     settingsBtn.focus();
+    touchIdle();
   }
 
   function saveSettings()
@@ -2202,6 +2410,20 @@
   settingsCancel.addEventListener("click", closeSettings);
   settingsSave.addEventListener("click", saveSettings);
   forgetBtn.addEventListener("click", forgetPin);
+  soundBtn.addEventListener("click", toggleSound);
+
+  hintsToggle.addEventListener("change", function ()
+  {
+    writeStored(HINTS_KEY, hintsToggle.checked ? "on" : "off");
+    if (hintsToggle.checked)
+    {
+      touchIdle();
+    }
+    else
+    {
+      clearIdleHint();
+    }
+  });
 
   langSelect.addEventListener("change", function ()
   {
@@ -2306,10 +2528,12 @@
       peekHide();
       stopSpeech();
       stopEyes();
+      clearIdleHint();
     }
     else
     {
       startEyes();
+      touchIdle();
     }
   });
 
@@ -2358,7 +2582,10 @@
   buildDots();
   applyLang();
   renderStars();
+  renderSoundBtn();
+  hintsToggle.checked = hintsEnabled();
   startEyes();
+  touchIdle();
 
   if (hasSpeech())
   {

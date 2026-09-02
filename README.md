@@ -16,7 +16,14 @@ A big, friendly, touch-first keypad for helping a young child memorize a
 - **Wrong PIN** → a gentle shake and a spoken encouragement ("So close! Give
   it another try."), then it clears itself. No scary red X.
 - **👀 Peek** reveals the PIN under the dots while the button is held —
-  **once per try**. It re-arms on the next attempt.
+  **once per try**. It re-arms on the next attempt. Its eyes glance around and
+  blink on their own, get busy while it's held, and shut once it's been used.
+- **Idle nudge.** Sit still mid-entry for ~7s and the key holding the *next*
+  digit gives a little wave, repeating every ~5s until they press something.
+  It only ever points at the digit they're up to, so it never gives the whole
+  PIN away. Switch it off under **Settings → Wiggle the next key**.
+- **🔊 Mute** button next to the gear on the main screen silences the digits,
+  cheers and blips without opening Settings.
 - Fits portrait phones, landscape phones (two-column layout), and tablets.
   Light and dark themes. Honors `prefers-reduced-motion`.
 - Installable to a home screen (web app manifest) for a full-screen,
