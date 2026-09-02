@@ -24,6 +24,38 @@ A big, friendly, touch-first keypad for helping a young child memorize a
   PIN away. Switch it off under **Settings → Wiggle the next key**.
 - **🔊 Mute** button next to the gear on the main screen silences the digits,
   cheers and blips without opening Settings.
+
+## Practice levels
+
+Help fades as they improve. Three rungs, auto-advancing after **3 correct in
+a row**; a wrong entry resets the streak but **never demotes** them.
+
+| Level | | |
+| --- | --- | --- |
+| 1 | **Follow the lights** | The next key lights up immediately |
+| 2 | **Try first** | The next key lights up after ~1.6s, so they get a real go at recalling it |
+| 3 | **All by myself** | No light — only the idle nudge, if that's on |
+
+It only ever lights the digit they're *up to*, never the whole PIN.
+
+**Shuffle the keypad** is a separate switch, not a level. Kids memorize the
+*finger path*, not the numbers — a shuffled pad is the only way to prove real
+recall, and it's what a real door looks like. Off by default.
+
+## Stickers
+
+One sticker per success, plopped onto the win screen and collected in a
+sticker book (tap the 🏅 chip in the header). Eight shapes, drawn in the app's
+own palette.
+
+## Turning it off
+
+**Practice levels** and **Sticker rewards** are independent switches in
+Settings — some households want stickers without the training wheels, or the
+reverse. With both off the app behaves exactly as it did before they existed.
+
+Switching either off **hides, never deletes**: the level they'd reached and
+the whole sticker collection are waiting if it gets switched back on.
 - Fits portrait phones, landscape phones (two-column layout), and tablets.
   Light and dark themes. Honors `prefers-reduced-motion`.
 - Installable to a home screen (web app manifest) for a full-screen,

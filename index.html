@@ -910,6 +910,126 @@
     .celebrate__card p { font-size: 1rem; margin-bottom: 14px; }
   }
 
+  /* ---------- practice levels: the guide light ----------
+     One highlight with two intensities rather than three separate
+     mechanics. Level 1 lights the next key immediately and brightly;
+     level 2 waits a beat first and glows softly, so the child gets a
+     chance to recall before the help arrives; level 3 shows nothing. */
+  .key--guide
+  {
+    outline: 4px solid rgba(255, 255, 255, 0.92);
+    outline-offset: -4px;
+    animation: keyGuide 1.15s ease-in-out infinite;
+  }
+
+  .key--guide.is-soft
+  {
+    outline-color: rgba(255, 255, 255, 0.55);
+    animation-duration: 1.7s;
+  }
+
+  @keyframes keyGuide
+  {
+    0%, 100% { filter: brightness(1); transform: none; }
+    50% { filter: brightness(1.22); transform: translateY(-4px) scale(1.04); }
+  }
+
+  /* ---------- header chip (level / sticker count) ---------- */
+  .chip
+  {
+    appearance: none;
+    border: 2px solid var(--key-border);
+    background: var(--card);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight: 800;
+    font-size: clamp(0.8rem, 3.4vw, 0.95rem);
+    line-height: 1;
+    padding: 8px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+    cursor: default;
+    box-shadow: 0 3px 0 var(--key-shadow);
+  }
+
+  .chip:empty { display: none; }
+  .chip[data-clickable="1"] { cursor: pointer; }
+  .chip[data-clickable="1"]:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--key-shadow); }
+
+  /* ---------- stickers ---------- */
+  .sticker-grid
+  {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 8px;
+    margin: 0 0 4px;
+  }
+
+  .sticker-slot
+  {
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sticker-slot svg { width: 78%; height: 78%; display: block; }
+
+  .sticker-empty
+  {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  /* The just-earned sticker, plopped onto the win card. */
+  .sticker-prize
+  {
+    width: 74px;
+    height: 74px;
+    margin: 4px auto 10px;
+    display: block;
+    animation: stickerPlop 620ms cubic-bezier(0.18, 1.5, 0.4, 1);
+  }
+
+  @keyframes stickerPlop
+  {
+    0% { transform: scale(0.1) rotate(-35deg); opacity: 0; }
+    55% { transform: scale(1.25) rotate(8deg); opacity: 1; }
+    75% { transform: scale(0.94) rotate(-4deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .level-up
+  {
+    margin: 0 0 14px !important;
+    color: var(--title) !important;
+    font-weight: 800 !important;
+  }
+
+  /* ---------- settings sections ---------- */
+  .section
+  {
+    margin: 0 0 6px;
+    padding-top: 16px;
+    border-top: 2px solid var(--key-border);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .section:first-of-type { padding-top: 0; border-top: none; }
+
+  @media (prefers-color-scheme: dark)
+  {
+    .sticker-slot { background: rgba(255, 255, 255, 0.07); }
+  }
+
   @media (prefers-reduced-motion: reduce)
   {
     .key--pop,
@@ -918,6 +1038,7 @@
     .celebrate__card,
     .peek-btn.is-peeking,
     .peek-btn.is-denied,
+    .sticker-prize,
     .shake { animation: none !important; }
     .echo { opacity: 0 !important; }
     /* The rising fill is a progress indicator, not decoration, so it
@@ -926,6 +1047,8 @@
     /* The idle nudge still has to be noticeable - swap the wave for a
        brightness pulse rather than dropping the hint entirely. */
     .key--hint { animation: keyGlow 1.2s ease !important; }
+    /* Keep the guide ring, drop only its bob. */
+    .key--guide { animation: none !important; }
   }
 </style>
 </head>
@@ -936,8 +1059,8 @@
   <div class="panel">
     <header>
       <h1 data-i18n="title">PIN Practice</h1>
-      <p id="stars" class="stars" aria-live="polite"></p>
       <div class="header-actions">
+        <button id="chip" class="chip" type="button" aria-live="polite"></button>
         <button id="soundBtn" class="icon-btn" type="button" aria-pressed="false" aria-label="Sound on"><span id="soundIcon" aria-hidden="true">&#128266;</span></button>
         <button id="settingsBtn" class="icon-btn" type="button" data-i18n-aria="gearLabel" data-i18n-title="gearLabel" aria-label="Grown-up settings (press and hold)" title="Press and hold to open settings"><span class="gear" aria-hidden="true">&#9881;&#65039;</span></button>
       </div>
@@ -972,18 +1095,32 @@
 
 <div id="celebrate" class="celebrate" hidden>
   <div class="celebrate__card" role="dialog" aria-modal="true" aria-labelledby="celebrateTitle">
-    <div class="celebrate__emoji" aria-hidden="true">&#127881;</div>
+    <div id="celebrateEmoji" class="celebrate__emoji" aria-hidden="true">&#127881;</div>
+    <div id="stickerPrize" hidden></div>
     <h2 id="celebrateTitle" data-i18n="youDidIt">YOU DID IT!</h2>
     <p id="celebrateLine">You know your PIN!</p>
+    <p id="levelUpLine" class="level-up" hidden></p>
     <button id="againBtn" class="restart" type="button" data-i18n="practiceAgain">Practice Again</button>
+  </div>
+</div>
+
+<div id="stickerBook" class="modal" hidden>
+  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="stickerTitle" tabindex="-1">
+    <h2 id="stickerTitle" data-i18n="stickerBook">Sticker Book</h2>
+    <p id="stickerCount"></p>
+    <div id="stickerGrid" class="sticker-grid"></div>
+    <p id="stickerEmpty" class="sticker-empty" data-i18n="stickerEmpty" hidden>No stickers yet — get your PIN right to earn one!</p>
+    <div class="modal__actions" style="margin-top: 16px;">
+      <button id="stickerClose" class="btn" type="button" data-i18n="close">Close</button>
+    </div>
   </div>
 </div>
 
 <div id="settings" class="modal" hidden>
   <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" tabindex="-1">
     <h2 id="settingsTitle" data-i18n="settingsTitle">Grown-up Settings</h2>
-    <p data-i18n="settingsIntro">Set the 6-digit PIN to practise. It is never shown on this screen.</p>
 
+    <p class="section" data-i18n="secPin">PIN</p>
     <p id="pinStatus" class="status-line"></p>
 
     <label for="pinInput"><span data-i18n="newPin">New PIN</span>
@@ -992,6 +1129,45 @@
     <label for="pinConfirm"><span data-i18n="confirmPin">Confirm PIN</span>
       <input id="pinConfirm" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="------">
     </label>
+
+    <p id="settingsMsg" class="settings-msg" aria-live="polite"></p>
+
+    <div class="modal__actions">
+      <button id="forgetBtn" class="btn btn--danger btn--spacer" type="button" data-i18n="forgetPin">Forget PIN</button>
+      <button id="settingsSave" class="btn" type="button" data-i18n="savePin">Save PIN</button>
+    </div>
+
+    <p class="section" data-i18n="secPractice">Practice</p>
+
+    <label class="toggle-row" for="levelsToggle">
+      <input id="levelsToggle" type="checkbox" checked>
+      <span data-i18n="levelsLabel">Practice levels — help fades as they improve</span>
+    </label>
+
+    <label for="levelSelect" id="levelSelectRow"><span data-i18n="levelLabel">Current level</span>
+      <select id="levelSelect">
+        <option value="1"></option>
+        <option value="2"></option>
+        <option value="3"></option>
+      </select>
+    </label>
+
+    <label class="toggle-row" for="stickersToggle">
+      <input id="stickersToggle" type="checkbox" checked>
+      <span data-i18n="stickersLabel">Sticker rewards — one for every success</span>
+    </label>
+
+    <label class="toggle-row" for="shuffleToggle">
+      <input id="shuffleToggle" type="checkbox">
+      <span data-i18n="shuffleLabel">Shuffle the keypad — proves they know the numbers, not the finger path</span>
+    </label>
+
+    <label class="toggle-row" for="hintsToggle">
+      <input id="hintsToggle" type="checkbox" checked>
+      <span data-i18n="hintsLabel">Wiggle the next key if they get stuck</span>
+    </label>
+
+    <p class="section" data-i18n="secSound">Sound &amp; Voice</p>
 
     <label for="langSelect"><span data-i18n="language">Language</span>
       <select id="langSelect">
@@ -1004,26 +1180,14 @@
       <select id="voiceSelect"></select>
     </label>
 
-    <label class="toggle-row" for="hintsToggle">
-      <input id="hintsToggle" type="checkbox" checked>
-      <span data-i18n="hintsLabel">Wiggle the next key if they get stuck</span>
-    </label>
-
-    <p id="settingsMsg" class="settings-msg" aria-live="polite"></p>
-
     <div class="modal__actions">
       <button id="voiceTest" class="btn btn--ghost btn--spacer" type="button">&#128266; <span data-i18n="test">Test</span></button>
-      <button id="settingsCancel" class="btn btn--ghost" type="button" data-i18n="cancel">Cancel</button>
-      <button id="settingsSave" class="btn" type="button" data-i18n="savePin">Save PIN</button>
+      <button id="settingsCancel" class="btn" type="button" data-i18n="done">Done</button>
     </div>
 
     <p class="fine-print" data-i18n="finePrint">
       The PIN is kept in this browser's local storage on this device only, it is never sent anywhere, but it is not encrypted, so use Forget PIN on a shared or borrowed device.
     </p>
-
-    <div class="modal__actions" style="margin-top: 12px;">
-      <button id="forgetBtn" class="btn btn--danger" type="button" data-i18n="forgetPin">Forget PIN</button>
-    </div>
   </div>
 </div>
 
@@ -1037,6 +1201,12 @@
   var VOICE_KEY_PREFIX = "pinPractice.voice.";
   var HINTS_KEY = "pinPractice.hints.v1";
   var SOUND_KEY = "pinPractice.sound.v1";
+  var LEVELS_KEY = "pinPractice.levels.v1";
+  var LEVEL_KEY = "pinPractice.level.v1";
+  var STREAK_KEY = "pinPractice.levelStreak.v1";
+  var STICKERS_ON_KEY = "pinPractice.stickersOn.v1";
+  var STICKERS_KEY = "pinPractice.stickers.v1";
+  var SHUFFLE_KEY = "pinPractice.shuffle.v1";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
   var HOLD_MS = 800;
@@ -1044,6 +1214,15 @@
   // how often it waves again after that.
   var IDLE_FIRST_MS = 7000;
   var IDLE_REPEAT_MS = 5000;
+  // Level 2 waits this long before lighting the next key, so the child
+  // gets a real go at recalling it first.
+  var GUIDE_DELAY_MS = 1600;
+  var MAX_LEVEL = 3;
+  // Correct entries in a row at the current level before moving up.
+  var LEVEL_UP_STREAK = 3;
+  // Sticker history is a string of digits, one per sticker. Capped so a
+  // very keen child can't grow localStorage without bound.
+  var MAX_STICKERS = 240;
 
   /* ---------- copy, per language ----------
      Every visible string and every spoken line lives here so a language
@@ -1063,20 +1242,34 @@
       practiceAgain: "Practice Again",
       youDidIt: "YOU DID IT!",
       settingsTitle: "Grown-up Settings",
-      settingsIntro: "Set the 6-digit PIN to practise. It is never shown on this screen.",
+      secPin: "PIN",
+      secPractice: "Practice",
+      secSound: "Sound & Voice",
       newPin: "New PIN",
       confirmPin: "Confirm PIN",
       language: "Language",
       voice: "Voice",
       hintsLabel: "Wiggle the next key if they get stuck",
+      levelsLabel: "Practice levels — help fades as they improve",
+      levelLabel: "Current level",
+      stickersLabel: "Sticker rewards — one for every success",
+      shuffleLabel: "Shuffle the keypad — proves they know the numbers, not the finger path",
       soundOnLabel: "Sound is on — tap to mute",
       soundOffLabel: "Sound is off — tap to unmute",
       soundMuted: "Sound off 🔇",
       soundUnmuted: "Sound on 🔊",
       test: "Test",
-      cancel: "Cancel",
+      done: "Done",
+      close: "Close",
       savePin: "Save PIN",
       forgetPin: "Forget PIN",
+      stickerBook: "Sticker Book",
+      stickerEmpty: "No stickers yet — get your PIN right to earn one!",
+      stickerCount: function (n) { return n === 1 ? "1 sticker earned" : n + " stickers earned"; },
+      stickerBookAria: function (n) { return "Sticker book, " + n + " earned"; },
+      levelNames: ["Follow the lights", "Try first", "All by myself"],
+      levelUp: function (n) { return "Level " + n + " unlocked!"; },
+      levelShort: function (n) { return "Lv " + n; },
       finePrint: "The PIN is kept in this browser's local storage on this device only — it is never sent anywhere, but it is not encrypted, so use Forget PIN on a shared or borrowed device.",
       statusSaved: "A 6-digit PIN is saved on this device.",
       statusNone: "No PIN saved yet — practising with " + DEFAULT_PIN + ".",
@@ -1106,6 +1299,10 @@
         "Perfect! You remembered your PIN!",
         "Woo hoo! Nice job!"
       ],
+      levelUpCheers: [
+        "Wow! You levelled up!",
+        "Amazing! On to the next level!"
+      ],
       tryAgains: [
         "So close! Give it another try.",
         "Almost! You can do it. Try again.",
@@ -1126,20 +1323,34 @@
       practiceAgain: "Practicar otra vez",
       youDidIt: "¡LO LOGRASTE!",
       settingsTitle: "Ajustes para adultos",
-      settingsIntro: "Elige el PIN de 6 dígitos para practicar. Nunca se muestra en esta pantalla.",
+      secPin: "PIN",
+      secPractice: "Práctica",
+      secSound: "Sonido y voz",
       newPin: "PIN nuevo",
       confirmPin: "Confirmar PIN",
       language: "Idioma",
       voice: "Voz",
       hintsLabel: "Mover la siguiente tecla si se atora",
+      levelsLabel: "Niveles de práctica — la ayuda se reduce poco a poco",
+      levelLabel: "Nivel actual",
+      stickersLabel: "Calcomanías — una por cada acierto",
+      shuffleLabel: "Revolver el teclado — comprueba que se sabe los números, no el movimiento",
       soundOnLabel: "El sonido está encendido — toca para silenciar",
       soundOffLabel: "El sonido está apagado — toca para activarlo",
       soundMuted: "Sonido apagado 🔇",
       soundUnmuted: "Sonido encendido 🔊",
       test: "Probar",
-      cancel: "Cancelar",
+      done: "Listo",
+      close: "Cerrar",
       savePin: "Guardar PIN",
       forgetPin: "Borrar PIN",
+      stickerBook: "Álbum de calcomanías",
+      stickerEmpty: "Aún no hay calcomanías — ¡acierta tu PIN para ganar una!",
+      stickerCount: function (n) { return n === 1 ? "1 calcomanía ganada" : n + " calcomanías ganadas"; },
+      stickerBookAria: function (n) { return "Álbum de calcomanías, " + n + " ganadas"; },
+      levelNames: ["Sigue las luces", "Inténtalo primero", "Yo solito"],
+      levelUp: function (n) { return "¡Nivel " + n + " desbloqueado!"; },
+      levelShort: function (n) { return "Niv " + n; },
       finePrint: "El PIN se guarda solo en este navegador y en este dispositivo — nunca se envía a ningún lado, pero no está cifrado, así que usa Borrar PIN en un dispositivo compartido o prestado.",
       statusSaved: "Hay un PIN de 6 dígitos guardado en este dispositivo.",
       statusNone: "Aún no hay PIN guardado — practicando con " + DEFAULT_PIN + ".",
@@ -1169,6 +1380,10 @@
         "¡Perfecto! ¡Recordaste tu PIN!",
         "¡Bravo! ¡Muy buen trabajo!"
       ],
+      levelUpCheers: [
+        "¡Guau! ¡Subiste de nivel!",
+        "¡Increíble! ¡Al siguiente nivel!"
+      ],
       tryAgains: [
         "¡Casi! Inténtalo otra vez.",
         "¡Muy cerca! Tú puedes. Intenta de nuevo.",
@@ -1197,12 +1412,14 @@
   var dotsEl = document.getElementById("dots");
   var msgEl = document.getElementById("message");
   var echoEl = document.getElementById("echo");
-  var starsEl = document.getElementById("stars");
+  var chipEl = document.getElementById("chip");
   var keypadEl = document.getElementById("keypad");
   var restartBtn = document.getElementById("restartBtn");
   var hintBtn = document.getElementById("hintBtn");
   var celebrateEl = document.getElementById("celebrate");
   var celebrateLine = document.getElementById("celebrateLine");
+  var levelUpLine = document.getElementById("levelUpLine");
+  var stickerPrize = document.getElementById("stickerPrize");
   var againBtn = document.getElementById("againBtn");
   var settingsBtn = document.getElementById("settingsBtn");
   var settingsEl = document.getElementById("settings");
@@ -1217,8 +1434,18 @@
   var voiceTest = document.getElementById("voiceTest");
   var langSelect = document.getElementById("langSelect");
   var hintsToggle = document.getElementById("hintsToggle");
+  var levelsToggle = document.getElementById("levelsToggle");
+  var levelSelect = document.getElementById("levelSelect");
+  var levelSelectRow = document.getElementById("levelSelectRow");
+  var stickersToggle = document.getElementById("stickersToggle");
+  var shuffleToggle = document.getElementById("shuffleToggle");
   var soundBtn = document.getElementById("soundBtn");
   var soundIcon = document.getElementById("soundIcon");
+  var stickerBookEl = document.getElementById("stickerBook");
+  var stickerGrid = document.getElementById("stickerGrid");
+  var stickerCountEl = document.getElementById("stickerCount");
+  var stickerEmptyEl = document.getElementById("stickerEmpty");
+  var stickerClose = document.getElementById("stickerClose");
 
   var entry = "";
   var locked = false;
@@ -1231,6 +1458,20 @@
   var DIGIT_COLORS = [
     "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
     "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#65a30d"
+  ];
+
+  // Sticker artwork: one path each, drawn in a 24x24 box. Kept as plain
+  // data and built with createElementNS so nothing ever goes near
+  // innerHTML.
+  var STICKERS = [
+    { d: "M12 2.2l2.9 6.2 6.8.8-5 4.7 1.3 6.8L12 17.3 6 20.7l1.3-6.8-5-4.7 6.8-.8z", c: "#f59e0b" },
+    { d: "M12 21s-7.6-4.9-7.6-10.1A4.6 4.6 0 0 1 12 8.3a4.6 4.6 0 0 1 7.6 2.6C19.6 16.1 12 21 12 21z", c: "#ec4899" },
+    { d: "M13.4 2L4 14.2h5.6L8.8 22l9.4-12.2h-5.6z", c: "#f5c211" },
+    { d: "M12 2l7.2 10L12 22 4.8 12z", c: "#06b6d4" },
+    { d: "M15.6 2.6A9.4 9.4 0 1 0 21 15.4 7.4 7.4 0 0 1 15.6 2.6z", c: "#8b5cf6" },
+    { d: "M12 1.8l2.1 3.6 4-1.2-1.2 4 3.6 2.1-3.6 2.1 1.2 4-4-1.2L12 20l-2.1-3.6-4 1.2 1.2-4L3.5 11.5l3.6-2.1-1.2-4 4 1.2z", c: "#ef4444" },
+    { d: "M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 5.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z", c: "#22c55e" },
+    { d: "M12 2.4c1.7 0 2.6 1.3 3.9 1.7 1.3.4 3-.4 3.9.9.9 1.3-.2 2.8.2 4.1.4 1.3 1.9 2.1 1.9 3.6 0 1.5-1.5 2.3-1.9 3.6-.4 1.3.7 2.8-.2 4.1-.9 1.3-2.6.5-3.9.9-1.3.4-2.2 1.7-3.9 1.7s-2.6-1.3-3.9-1.7c-1.3-.4-3 .4-3.9-.9-.9-1.3.2-2.8-.2-4.1-.4-1.3-1.9-2.1-1.9-3.6 0-1.5 1.5-2.3 1.9-3.6.4-1.3-.7-2.8.2-4.1.9-1.3 2.6-.5 3.9-.9C9.4 3.7 10.3 2.4 12 2.4z", c: "#3b82f6" }
   ];
 
   function pick(arr)
@@ -1295,17 +1536,55 @@
     return !(v && /^[0-9]{6}$/.test(v));
   }
 
-  /* ---------- preferences ---------- */
-  // Both default to on, so a missing key means enabled and only an
-  // explicit "off" turns either feature off.
-  function hintsEnabled()
+  /* ---------- preferences ----------
+     Everything defaults to on except shuffle, so a missing key means
+     enabled and only an explicit "off" turns a feature off. Turning a
+     feature off never erases its progress - the level and the sticker
+     collection are simply not applied or shown. */
+  function hintsEnabled() { return readStored(HINTS_KEY) !== "off"; }
+  function soundOn() { return readStored(SOUND_KEY) !== "off"; }
+  function levelsOn() { return readStored(LEVELS_KEY) !== "off"; }
+  function stickersOn() { return readStored(STICKERS_ON_KEY) !== "off"; }
+  function shuffleOn() { return readStored(SHUFFLE_KEY) === "on"; }
+
+  function currentLevel()
   {
-    return readStored(HINTS_KEY) !== "off";
+    var n = parseInt(readStored(LEVEL_KEY), 10);
+    if (!(n >= 1 && n <= MAX_LEVEL))
+    {
+      return 1;
+    }
+    return n;
   }
 
-  function soundOn()
+  function setLevel(n)
   {
-    return readStored(SOUND_KEY) !== "off";
+    writeStored(LEVEL_KEY, String(n));
+    writeStored(STREAK_KEY, "0");
+  }
+
+  function levelStreak()
+  {
+    var n = parseInt(readStored(STREAK_KEY), 10);
+    return n > 0 ? n : 0;
+  }
+
+  function getStickers()
+  {
+    var s = readStored(STICKERS_KEY) || "";
+    return /^[0-9]*$/.test(s) ? s : "";
+  }
+
+  function addSticker()
+  {
+    var id = (Math.random() * STICKERS.length) | 0;
+    var s = getStickers() + String(id);
+    if (s.length > MAX_STICKERS)
+    {
+      s = s.slice(s.length - MAX_STICKERS);
+    }
+    writeStored(STICKERS_KEY, s);
+    return id;
   }
 
   function renderSoundBtn()
@@ -1333,6 +1612,42 @@
       // Immediate proof it is back, and it doubles as the user gesture
       // that unlocks the AudioContext on mobile.
       blip(5);
+    }
+  }
+
+  /* ---------- header chip ----------
+     Shows the sticker count when stickers are on (and opens the book),
+     the level when only levels are on, and falls back to the plain
+     session win count when both are off - so the chip never disappears
+     entirely and never shows two competing scores at once. */
+  function renderChip()
+  {
+    var parts = [];
+    var clickable = false;
+    if (levelsOn())
+    {
+      parts.push(T().levelShort(currentLevel()));
+    }
+    if (stickersOn())
+    {
+      parts.push("🏅 " + getStickers().length);
+      clickable = true;
+    }
+    else if (!levelsOn() && wins > 0)
+    {
+      parts.push("⭐ " + wins);
+    }
+    chipEl.textContent = parts.join("  ");
+    chipEl.setAttribute("data-clickable", clickable ? "1" : "0");
+    if (clickable)
+    {
+      chipEl.setAttribute("aria-label", T().stickerBookAria(getStickers().length));
+      chipEl.removeAttribute("tabindex");
+    }
+    else
+    {
+      chipEl.removeAttribute("aria-label");
+      chipEl.setAttribute("tabindex", "-1");
     }
   }
 
@@ -1397,9 +1712,15 @@
       }
     }
 
+    for (var n = 0; n < levelSelect.options.length; n++)
+    {
+      levelSelect.options[n].textContent = (n + 1) + " · " + t.levelNames[n];
+    }
+
     document.title = t.title;
     langSelect.value = uiLang;
     renderSoundBtn();
+    renderChip();
     renderDots();
     renderPinStatus();
     hint();
@@ -1416,6 +1737,70 @@
     applyLang();
     // Voices are filtered by language, so the pick has to be redone.
     loadVoices();
+  }
+
+  /* ---------- keypad layout ---------- */
+  function digitKeys()
+  {
+    var all = keypadEl.querySelectorAll(".key:not(.key--action)");
+    return all;
+  }
+
+  // Paints a digit onto a key: value, label and both of its colours (the
+  // face and the darker ledge underneath it).
+  function paintKey(el, digit)
+  {
+    var color = DIGIT_COLORS[digit];
+    el.setAttribute("data-key", String(digit));
+    el.textContent = String(digit);
+    el.style.setProperty("--kc", color);
+    el.style.setProperty("--kc-dark", shade(color, 0.68));
+  }
+
+  // Darker shade of a key's own colour for its 3D ledge - the same trick
+  // the Peek button's darker yellow uses. Computed here rather than with
+  // CSS color-mix() so older browsers get it too.
+  function shade(hex, factor)
+  {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m)
+    {
+      return hex;
+    }
+    var n = parseInt(m[1], 16);
+    var r = Math.round(((n >> 16) & 255) * factor);
+    var g = Math.round(((n >> 8) & 255) * factor);
+    var b = Math.round((n & 255) * factor);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
+  // Standard 1-9 then 0 order, or a random arrangement when shuffle is
+  // on. Shuffling is what separates "knows the numbers" from "knows the
+  // finger path" - a child who only learned the shape freezes on a
+  // keypad laid out differently, which is exactly what a real door has.
+  function layoutKeys(randomise)
+  {
+    var order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+    if (randomise)
+    {
+      for (var i = order.length - 1; i > 0; i--)
+      {
+        var j = (Math.random() * (i + 1)) | 0;
+        var tmp = order[i];
+        order[i] = order[j];
+        order[j] = tmp;
+      }
+    }
+    var keys = digitKeys();
+    for (var k = 0; k < keys.length && k < order.length; k++)
+    {
+      paintKey(keys[k], order[k]);
+    }
+  }
+
+  function relayout()
+  {
+    layoutKeys(shuffleOn());
   }
 
   /* ---------- entry display ---------- */
@@ -1475,9 +1860,68 @@
     window.setTimeout(hint, ms || 2200);
   }
 
-  function renderStars()
+  /* ---------- peek ---------- */
+  function armPeek()
   {
-    starsEl.textContent = wins > 0 ? "⭐ " + wins : "";
+    peekUsed = false;
+    hintBtn.classList.remove("is-spent");
+    hintBtn.setAttribute("aria-disabled", "false");
+    // Eyes wake back up for the new try.
+    moveEyes(true);
+    startEyes();
+  }
+
+  function peekShow(e)
+  {
+    if (e && e.cancelable)
+    {
+      e.preventDefault();
+    }
+    if (peekUsed)
+    {
+      hintBtn.classList.remove("is-denied");
+      void hintBtn.offsetWidth;
+      hintBtn.classList.add("is-denied");
+      flashMessage(T().onePeek);
+      return;
+    }
+    peekUsed = true;
+    peeking = true;
+    var pin = getTarget();
+    var nodes = dotsEl.children;
+    for (var i = 0; i < nodes.length; i++)
+    {
+      var b = nodes[i].querySelector(".dot__num");
+      if (b)
+      {
+        b.textContent = pin.charAt(i);
+      }
+    }
+    dotsEl.classList.add("dots--peek");
+    hintBtn.classList.add("is-peeking");
+    setEyesFast(true);
+  }
+
+  function peekHide()
+  {
+    if (!peeking)
+    {
+      return;
+    }
+    peeking = false;
+    dotsEl.classList.remove("dots--peek");
+    hintBtn.classList.remove("is-peeking");
+    setEyesFast(false);
+    if (peekUsed)
+    {
+      hintBtn.classList.add("is-spent");
+      hintBtn.setAttribute("aria-disabled", "true");
+      // Stop glancing/blinking so the eyes settle shut and stay shut.
+      stopEyes();
+    }
+    hint();
+    touchIdle();
+    updateGuide();
   }
 
   /* ---------- peek button eyes ----------
@@ -1600,69 +2044,6 @@
     scheduleBlink();
   }
 
-  /* ---------- peek ---------- */
-  function armPeek()
-  {
-    peekUsed = false;
-    hintBtn.classList.remove("is-spent");
-    hintBtn.setAttribute("aria-disabled", "false");
-    // Eyes wake back up for the new try.
-    moveEyes(true);
-    startEyes();
-  }
-
-  function peekShow(e)
-  {
-    if (e && e.cancelable)
-    {
-      e.preventDefault();
-    }
-    if (peekUsed)
-    {
-      hintBtn.classList.remove("is-denied");
-      void hintBtn.offsetWidth;
-      hintBtn.classList.add("is-denied");
-      flashMessage(T().onePeek);
-      return;
-    }
-    peekUsed = true;
-    peeking = true;
-    var pin = getTarget();
-    var nodes = dotsEl.children;
-    for (var i = 0; i < nodes.length; i++)
-    {
-      var b = nodes[i].querySelector(".dot__num");
-      if (b)
-      {
-        b.textContent = pin.charAt(i);
-      }
-    }
-    dotsEl.classList.add("dots--peek");
-    hintBtn.classList.add("is-peeking");
-    setEyesFast(true);
-  }
-
-  function peekHide()
-  {
-    if (!peeking)
-    {
-      return;
-    }
-    peeking = false;
-    dotsEl.classList.remove("dots--peek");
-    hintBtn.classList.remove("is-peeking");
-    setEyesFast(false);
-    if (peekUsed)
-    {
-      hintBtn.classList.add("is-spent");
-      hintBtn.setAttribute("aria-disabled", "true");
-      // Stop glancing/blinking so the eyes settle shut and stay shut.
-      stopEyes();
-    }
-    hint();
-    touchIdle();
-  }
-
   /* ---------- audio ---------- */
   // One shared AudioContext for the whole page. Creating a fresh one per
   // sound (as the win chord used to) leaks contexts and hits the
@@ -1743,6 +2124,24 @@
       for (var i = 0; i < notes.length; i++)
       {
         tone(c, notes[i], i * 0.12, 0.26, 0.34, "triangle");
+      }
+    }
+    catch (e) {}
+  }
+
+  function levelUpSound()
+  {
+    var c = ac();
+    if (!c)
+    {
+      return;
+    }
+    try
+    {
+      var notes = [523.25, 698.46, 880, 1174.66, 1396.91];
+      for (var i = 0; i < notes.length; i++)
+      {
+        tone(c, notes[i], 0.5 + i * 0.1, 0.24, 0.3, "square");
       }
     }
     catch (e) {}
@@ -1965,9 +2364,9 @@
     speak(T().numWords[Number(digit)] || String(digit), 0.95, 1.3, false);
   }
 
-  function cheer()
+  function cheer(leveledUp)
   {
-    speak(pick(T().cheers), 1, 1.2, true);
+    speak(pick(leveledUp ? T().levelUpCheers : T().cheers), 1, 1.2, true);
   }
 
   function encourage()
@@ -1985,6 +2384,61 @@
       }
     }
     catch (e) {}
+  }
+
+  /* ---------- guide light (practice levels) ----------
+     Level 1 lights the next key straight away, level 2 waits a beat so
+     there is a real chance to recall first, level 3 shows nothing at
+     all. Only ever the NEXT key, never the whole PIN. */
+  var guideEl = null;
+  var guideTimer = null;
+
+  function clearGuide()
+  {
+    window.clearTimeout(guideTimer);
+    guideTimer = null;
+    if (guideEl)
+    {
+      guideEl.classList.remove("key--guide", "is-soft");
+      guideEl = null;
+    }
+  }
+
+  function updateGuide()
+  {
+    clearGuide();
+    if (!levelsOn() || locked || peeking || entry.length >= LEN)
+    {
+      return;
+    }
+    if (!settingsEl.hidden || !celebrateEl.hidden || !stickerBookEl.hidden)
+    {
+      return;
+    }
+    var level = currentLevel();
+    if (level >= MAX_LEVEL)
+    {
+      return;
+    }
+    var digit = getTarget().charAt(entry.length);
+    var el = keypadEl.querySelector('.key[data-key="' + digit + '"]');
+    if (!el)
+    {
+      return;
+    }
+    if (level === 1)
+    {
+      guideEl = el;
+      el.classList.add("key--guide");
+    }
+    else
+    {
+      guideTimer = window.setTimeout(function ()
+      {
+        guideEl = el;
+        el.classList.add("key--guide", "is-soft");
+      }, GUIDE_DELAY_MS);
+    }
   }
 
   /* ---------- idle nudge ----------
@@ -2023,8 +2477,10 @@
   function runIdleHint()
   {
     // Anything else going on (celebrating, mid-shake, peeking, settings
-    // open) means this is not idle time - wait and look again.
-    if (locked || peeking || !settingsEl.hidden || !celebrateEl.hidden || entry.length >= LEN)
+    // open) means this is not idle time - wait and look again. The level
+    // guide already points at the same key, so skip the wave then too.
+    if (locked || peeking || !settingsEl.hidden || !celebrateEl.hidden ||
+        !stickerBookEl.hidden || entry.length >= LEN || guideEl)
     {
       scheduleIdleHint(IDLE_REPEAT_MS);
       return;
@@ -2076,6 +2532,69 @@
     echoEl.classList.add("echo--go");
   }
 
+  /* ---------- stickers ---------- */
+  function makeStickerSvg(id, size)
+  {
+    var NS = "http://www.w3.org/2000/svg";
+    var def = STICKERS[id] || STICKERS[0];
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    if (size)
+    {
+      svg.setAttribute("width", String(size));
+      svg.setAttribute("height", String(size));
+    }
+    var path = document.createElementNS(NS, "path");
+    path.setAttribute("d", def.d);
+    path.setAttribute("fill", def.c);
+    path.setAttribute("fill-rule", "evenodd");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function renderStickerBook()
+  {
+    var s = getStickers();
+    while (stickerGrid.firstChild)
+    {
+      stickerGrid.removeChild(stickerGrid.firstChild);
+    }
+    for (var i = 0; i < s.length; i++)
+    {
+      var slot = document.createElement("div");
+      slot.className = "sticker-slot";
+      slot.appendChild(makeStickerSvg(Number(s.charAt(i))));
+      stickerGrid.appendChild(slot);
+    }
+    stickerCountEl.textContent = T().stickerCount(s.length);
+    stickerEmptyEl.hidden = s.length > 0;
+    stickerCountEl.hidden = s.length === 0;
+  }
+
+  function openStickerBook()
+  {
+    renderStickerBook();
+    clearGuide();
+    stickerBookEl.hidden = false;
+    window.setTimeout(function ()
+    {
+      var card = stickerBookEl.querySelector(".modal__card");
+      if (card)
+      {
+        card.focus();
+      }
+    }, 50);
+  }
+
+  function closeStickerBook()
+  {
+    stickerBookEl.hidden = true;
+    updateGuide();
+    touchIdle();
+  }
+
   /* ---------- game ---------- */
   function press(key)
   {
@@ -2094,6 +2613,7 @@
       {
         hint();
       }
+      updateGuide();
       return;
     }
     if (key === "clear")
@@ -2103,6 +2623,7 @@
       entry = "";
       renderDots();
       hint();
+      updateGuide();
       return;
     }
     if (!/^[0-9]$/.test(key))
@@ -2125,6 +2646,10 @@
     {
       evaluate();
     }
+    else
+    {
+      updateGuide();
+    }
   }
 
   function evaluate()
@@ -2143,12 +2668,19 @@
   {
     locked = true;
     clearIdleHint();
+    clearGuide();
     renderDots("wrong");
     dotsEl.classList.add("shake");
     setMessage(T().almost);
     sadSound();
     encourage();
     buzz([40, 70, 40]);
+    // A wrong entry never demotes a level - being sent backwards reads
+    // as punishment. Only the streak toward the NEXT level resets.
+    if (levelsOn())
+    {
+      writeStored(STREAK_KEY, "0");
+    }
     window.setTimeout(function ()
     {
       dotsEl.classList.remove("shake");
@@ -2156,8 +2688,10 @@
       renderDots();
       hint();
       armPeek();
+      relayout();
       locked = false;
       touchIdle();
+      updateGuide();
     }, 900);
   }
 
@@ -2165,16 +2699,66 @@
   {
     locked = true;
     clearIdleHint();
+    clearGuide();
     wins += 1;
-    renderStars();
     renderDots("win");
+
+    var leveledUp = false;
+    if (levelsOn())
+    {
+      var streak = levelStreak() + 1;
+      var level = currentLevel();
+      if (streak >= LEVEL_UP_STREAK && level < MAX_LEVEL)
+      {
+        setLevel(level + 1);
+        leveledUp = true;
+      }
+      else
+      {
+        writeStored(STREAK_KEY, String(streak));
+      }
+    }
+
     celebrateLine.textContent = pick(T().winLines);
+
+    while (stickerPrize.firstChild)
+    {
+      stickerPrize.removeChild(stickerPrize.firstChild);
+    }
+    if (stickersOn())
+    {
+      var id = addSticker();
+      var svg = makeStickerSvg(id);
+      svg.setAttribute("class", "sticker-prize");
+      stickerPrize.appendChild(svg);
+      stickerPrize.hidden = false;
+    }
+    else
+    {
+      stickerPrize.hidden = true;
+    }
+
+    if (leveledUp)
+    {
+      levelUpLine.textContent = T().levelUp(currentLevel()) + " " + T().levelNames[currentLevel() - 1];
+      levelUpLine.hidden = false;
+    }
+    else
+    {
+      levelUpLine.hidden = true;
+    }
+
+    renderChip();
     celebrateEl.hidden = false;
     launchConfetti();
     window.setTimeout(launchConfetti, 450);
     happySound();
-    cheer();
-    buzz([20, 40, 20, 40, 80]);
+    if (leveledUp)
+    {
+      levelUpSound();
+    }
+    cheer(leveledUp);
+    buzz(leveledUp ? [20, 40, 20, 40, 20, 40, 120] : [20, 40, 20, 40, 80]);
     window.setTimeout(function () { againBtn.focus(); }, 120);
   }
 
@@ -2184,10 +2768,13 @@
     locked = false;
     celebrateEl.hidden = true;
     stopSpeech();
+    relayout();
     renderDots();
     hint();
     armPeek();
     touchIdle();
+    updateGuide();
+    renderChip();
   }
 
   /* ---------- confetti ---------- */
@@ -2280,6 +2867,18 @@
     pinStatus.textContent = usingDefault() ? T().statusNone : T().statusSaved;
   }
 
+  function syncSettingsControls()
+  {
+    hintsToggle.checked = hintsEnabled();
+    levelsToggle.checked = levelsOn();
+    stickersToggle.checked = stickersOn();
+    shuffleToggle.checked = shuffleOn();
+    levelSelect.value = String(currentLevel());
+    // The level picker is meaningless with levels switched off, so it
+    // goes away rather than sitting there inert.
+    levelSelectRow.hidden = !levelsOn();
+  }
+
   function openSettings()
   {
     pinInput.value = "";
@@ -2288,15 +2887,16 @@
     settingsMsg.removeAttribute("data-ok");
     renderPinStatus();
     langSelect.value = uiLang;
-    hintsToggle.checked = hintsEnabled();
+    syncSettingsControls();
     loadVoices();
     clearIdleHint();
+    clearGuide();
     settingsEl.hidden = false;
     // Focus the dialog itself, NOT the PIN field: focusing a text input
     // throws the soft keyboard up the moment the panel opens, which
-    // covers the language / voice / hint settings below it. Focus still
-    // lands inside the dialog so keyboard and screen-reader users are
-    // taken there; the field is one Tab (or one tap) away.
+    // covers the settings below it. Focus still lands inside the dialog
+    // so keyboard and screen-reader users are taken there; the field is
+    // one Tab (or one tap) away.
     window.setTimeout(function ()
     {
       var card = settingsEl.querySelector(".modal__card");
@@ -2314,6 +2914,7 @@
     pinConfirm.value = "";
     settingsBtn.focus();
     touchIdle();
+    updateGuide();
   }
 
   function saveSettings()
@@ -2376,6 +2977,23 @@
   hintBtn.addEventListener("pointerleave", peekHide);
   hintBtn.addEventListener("pointercancel", peekHide);
   hintBtn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+  chipEl.addEventListener("click", function ()
+  {
+    if (chipEl.getAttribute("data-clickable") === "1")
+    {
+      openStickerBook();
+    }
+  });
+
+  stickerClose.addEventListener("click", closeStickerBook);
+  stickerBookEl.addEventListener("click", function (e)
+  {
+    if (e.target === stickerBookEl)
+    {
+      closeStickerBook();
+    }
+  });
 
   // Press-and-hold gate on the gear: a curious kid tapping it gets a
   // nudge, not the PIN editor.
@@ -2442,6 +3060,40 @@
     }
   });
 
+  levelsToggle.addEventListener("change", function ()
+  {
+    // Off hides the ladder but keeps the level they had reached - it is
+    // waiting for them if it gets switched back on.
+    writeStored(LEVELS_KEY, levelsToggle.checked ? "on" : "off");
+    syncSettingsControls();
+    renderChip();
+    clearGuide();
+  });
+
+  levelSelect.addEventListener("change", function ()
+  {
+    var n = parseInt(levelSelect.value, 10);
+    if (n >= 1 && n <= MAX_LEVEL)
+    {
+      setLevel(n);
+      renderChip();
+    }
+  });
+
+  stickersToggle.addEventListener("change", function ()
+  {
+    // Same again: off hides the collection, it is never deleted.
+    writeStored(STICKERS_ON_KEY, stickersToggle.checked ? "on" : "off");
+    renderChip();
+  });
+
+  shuffleToggle.addEventListener("change", function ()
+  {
+    writeStored(SHUFFLE_KEY, shuffleToggle.checked ? "on" : "off");
+    relayout();
+    updateGuide();
+  });
+
   langSelect.addEventListener("change", function ()
   {
     setLang(langSelect.value);
@@ -2505,6 +3157,14 @@
       }
       return;
     }
+    if (!stickerBookEl.hidden)
+    {
+      if (e.key === "Escape" || e.key === "Enter")
+      {
+        closeStickerBook();
+      }
+      return;
+    }
     if (!celebrateEl.hidden)
     {
       if (e.key === "Enter" || e.key === " ")
@@ -2514,7 +3174,7 @@
       }
       return;
     }
-    if (e.target === settingsBtn)
+    if (e.target === settingsBtn || e.target === chipEl || e.target === soundBtn)
     {
       return;
     }
@@ -2546,11 +3206,13 @@
       stopSpeech();
       stopEyes();
       clearIdleHint();
+      clearGuide();
     }
     else
     {
       startEyes();
       touchIdle();
+      updateGuide();
     }
   });
 
@@ -2562,47 +3224,14 @@
     }
   });
 
-  // Darker shade of a key's own colour for its 3D ledge - the same trick
-  // the Peek button's darker yellow uses. Computed here rather than with
-  // CSS color-mix() so older browsers get it too.
-  function shade(hex, factor)
-  {
-    var m = /^#([0-9a-f]{6})$/i.exec(hex);
-    if (!m)
-    {
-      return hex;
-    }
-    var n = parseInt(m[1], 16);
-    var r = Math.round(((n >> 16) & 255) * factor);
-    var g = Math.round(((n >> 8) & 255) * factor);
-    var b = Math.round((n & 255) * factor);
-    return "rgb(" + r + "," + g + "," + b + ")";
-  }
-
-  function paintKeys()
-  {
-    var keys = keypadEl.querySelectorAll(".key[data-key]");
-    for (var i = 0; i < keys.length; i++)
-    {
-      var k = keys[i].getAttribute("data-key");
-      if (/^[0-9]$/.test(k))
-      {
-        var color = DIGIT_COLORS[Number(k)];
-        keys[i].style.setProperty("--kc", color);
-        keys[i].style.setProperty("--kc-dark", shade(color, 0.68));
-      }
-    }
-  }
-
   uiLang = initialLang();
-  paintKeys();
+  relayout();
   buildDots();
   applyLang();
-  renderStars();
-  renderSoundBtn();
-  hintsToggle.checked = hintsEnabled();
+  syncSettingsControls();
   startEyes();
   touchIdle();
+  updateGuide();
 
   if (hasSpeech())
   {
