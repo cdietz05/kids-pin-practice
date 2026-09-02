@@ -333,6 +333,17 @@
     animation: peekWiggle 480ms ease-in-out infinite;
   }
 
+  .peek-btn:disabled
+  {
+    background: var(--key-border);
+    color: var(--muted);
+    box-shadow: none;
+    filter: none;
+    opacity: 0.65;
+    cursor: default;
+    transform: none;
+  }
+
   @keyframes peekWiggle
   {
     0%, 100% { transform: translateY(4px) scale(1) rotate(-3deg); }
@@ -733,6 +744,9 @@
   var entry = "";
   var locked = false;
   var peeking = false;
+  // One peek per try - consumed on the first peek, re-armed when a new
+  // try begins (reset, or after a wrong entry clears).
+  var peekUsed = false;
 
   var DIGIT_COLORS = [
     "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
@@ -846,12 +860,23 @@
     setMessage(usingDefault() ? "Tap ⚙️ to set the PIN" : "");
   }
 
+  function armPeek()
+  {
+    peekUsed = false;
+    hintBtn.disabled = false;
+  }
+
   function peekShow(e)
   {
     if (e && e.cancelable)
     {
       e.preventDefault();
     }
+    if (peekUsed)
+    {
+      return;
+    }
+    peekUsed = true;
     peeking = true;
     var pin = getTarget();
     var nodes = dotsEl.children;
@@ -876,6 +901,10 @@
     peeking = false;
     dotsEl.classList.remove("dots--peek");
     hintBtn.classList.remove("is-peeking");
+    if (peekUsed)
+    {
+      hintBtn.disabled = true;
+    }
     hint();
   }
 
@@ -1037,6 +1066,7 @@
       entry = "";
       renderDots();
       hint();
+      armPeek();
       locked = false;
     }, 850);
   }
@@ -1060,6 +1090,7 @@
     celebrateEl.hidden = true;
     renderDots();
     hint();
+    armPeek();
   }
 
   /* ---------- confetti ---------- */
