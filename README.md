@@ -28,8 +28,7 @@ A big, friendly, touch-first keypad for helping a young child memorize a
 
 - Fits portrait phones, landscape phones (two-column layout), and tablets.
   Light and dark themes. Honors `prefers-reduced-motion`.
-- Installable to a home screen (web app manifest) for a full-screen,
-  kiosk-like experience on a kid's tablet.
+- Installable as a real app — see below.
 
 ## Practice levels
 
@@ -65,6 +64,25 @@ Levels can be switched off entirely under **Settings → Practice levels**. That
 **hides, never deletes** — the level they'd reached is waiting if it's switched
 back on.
 
+## Installing it as an app
+
+It's a PWA — a manifest plus a service worker (`sw.js`), so it opens full
+screen with no browser chrome and **works with no internet at all**, which is
+what you want on a kid's tablet.
+
+- **Chrome / Edge / Android** — Settings has an **Install app** button. It
+  captures the browser's `beforeinstallprompt` event and replays it on tap, so
+  the offer appears where it belongs instead of as a bar over the keypad.
+- **iPhone / iPad** — Safari has no install API at all; nothing can trigger it
+  from script. Settings shows the instructions instead: **Share → Add to Home
+  Screen**.
+
+Either way, a one-time line on the main screen mentions that it can be
+installed, so a grown-up who never opens Settings still finds out.
+
+The service worker is network-first for the page (so a deploy reaches you on
+the next online load) and cache-first for everything else.
+
 ## Setting the PIN
 
 **Press and hold** the ⚙️ button for about a second — a quick tap won't open
@@ -77,7 +95,8 @@ Until a PIN is set, the practice PIN is `123456`.
 
 The PIN lives in this browser's `localStorage`, on that one device. It is
 never sent anywhere — the page makes no network requests at all after load
-(a Content-Security-Policy header on the page enforces `connect-src 'none'`).
+(its Content-Security-Policy enforces `connect-src 'none'`, and the service
+worker only ever touches same-origin files).
 
 It is **not encrypted**, because the Peek feature has to be able to show it.
 Anyone with the unlocked device and devtools could read it. Treat it the way

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; worker-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffffff">
 <meta name="description" content="A big, friendly keypad for helping a child learn a 6-digit PIN.">
@@ -1074,7 +1074,7 @@
 </style>
 </head>
 <body>
-<canvas id="confetti" aria-hidden="true"></canvas>
+<canvas id="confetti" aria-hidden="true" hidden></canvas>
 
 <main class="app">
   <div class="panel">
@@ -1192,6 +1192,15 @@
 
     <div class="modal__actions">
       <button id="voiceTest" class="btn btn--ghost btn--spacer" type="button">&#128266; <span data-i18n="test">Test</span></button>
+    </div>
+
+    <p class="section" data-i18n="secApp">App</p>
+    <p id="installNote" class="status-line"></p>
+    <div id="installRow" class="modal__actions" style="justify-content: flex-start;" hidden>
+      <button id="installBtn" class="btn" type="button" data-i18n="installBtn">Install app</button>
+    </div>
+
+    <div class="modal__actions" style="margin-top: 20px;">
       <button id="settingsCancel" class="btn" type="button" data-i18n="done">Done</button>
     </div>
 
@@ -1215,6 +1224,7 @@
   var LEVEL_KEY = "pinPractice.level.v1";
   var STREAK_KEY = "pinPractice.levelStreak.v1";
   var SHUFFLE_KEY = "pinPractice.shuffle.v1";
+  var INSTALL_NUDGE_KEY = "pinPractice.installNudge.v1";
   var DEFAULT_PIN = "123456";
   var LEN = 6;
   var HOLD_MS = 800;
@@ -1257,6 +1267,13 @@
       secPin: "PIN",
       secPractice: "Practice",
       secSound: "Sound & Voice",
+      secApp: "App",
+      installBtn: "Install app",
+      installReady: "Install this as a real app — it opens full screen with no browser bars, and works with no internet.",
+      installed: "Installed. You're running the app version.",
+      installIos: "On iPhone or iPad: tap the Share button in Safari, then Add to Home Screen.",
+      installOther: "Use your browser's menu — look for Install, Add to Home screen, or Add to Dock.",
+      installNudge: "This can be installed as an app — hold ⚙️",
       newPin: "New PIN",
       confirmPin: "Confirm PIN",
       language: "Language",
@@ -1351,6 +1368,13 @@
       secPin: "PIN",
       secPractice: "Práctica",
       secSound: "Sonido y voz",
+      secApp: "Aplicación",
+      installBtn: "Instalar la app",
+      installReady: "Instálala como app de verdad — se abre a pantalla completa, sin barras del navegador, y funciona sin internet.",
+      installed: "Instalada. Estás usando la versión de app.",
+      installIos: "En iPhone o iPad: toca el botón Compartir en Safari y luego Agregar a inicio.",
+      installOther: "Usa el menú de tu navegador — busca Instalar o Agregar a la pantalla de inicio.",
+      installNudge: "Se puede instalar como app — mantén ⚙️",
       newPin: "PIN nuevo",
       confirmPin: "Confirmar PIN",
       language: "Idioma",
@@ -1490,6 +1514,9 @@
   var levelPickerEl = document.getElementById("levelPicker");
   var levelListEl = document.getElementById("levelList");
   var levelClose = document.getElementById("levelClose");
+  var installNote = document.getElementById("installNote");
+  var installRow = document.getElementById("installRow");
+  var installBtn = document.getElementById("installBtn");
 
   var entry = "";
   var locked = false;
@@ -1663,6 +1690,101 @@
     }
   }
 
+  /* ---------- install as an app ----------
+     Chrome and Edge fire beforeinstallprompt when the page qualifies
+     (HTTPS, a manifest with icons, and a service worker with a fetch
+     handler - see sw.js). The event has to be captured and held: it can
+     only be replayed from a real user gesture, so it is stashed here and
+     fired by the Install button in Settings.
+
+     Safari has no equivalent API at all - "Add to Home Screen" lives in
+     the Share sheet and cannot be triggered from script - so iOS gets
+     written instructions instead of a button. */
+  var deferredInstall = null;
+
+  function isStandalone()
+  {
+    try
+    {
+      return window.matchMedia("(display-mode: standalone)").matches ||
+             window.navigator.standalone === true;
+    }
+    catch (e)
+    {
+      return false;
+    }
+  }
+
+  function isIOS()
+  {
+    var ua = navigator.userAgent || "";
+    // iPadOS reports itself as a Mac, so a Mac with a touch screen is
+    // taken to be an iPad.
+    return /iphone|ipad|ipod/i.test(ua) ||
+           (/Mac/i.test(navigator.platform || "") && navigator.maxTouchPoints > 1);
+  }
+
+  function canOfferInstall()
+  {
+    return !isStandalone() && (deferredInstall !== null || isIOS());
+  }
+
+  function renderInstallUi()
+  {
+    var t = T();
+    if (isStandalone())
+    {
+      installNote.textContent = t.installed;
+      installRow.hidden = true;
+      return;
+    }
+    if (deferredInstall)
+    {
+      installNote.textContent = t.installReady;
+      installRow.hidden = false;
+      return;
+    }
+    installRow.hidden = true;
+    installNote.textContent = isIOS() ? t.installIos : t.installOther;
+  }
+
+  function runInstall()
+  {
+    if (!deferredInstall)
+    {
+      return;
+    }
+    var evt = deferredInstall;
+    // Single-use: the browser will fire a fresh event if it is still
+    // installable later.
+    deferredInstall = null;
+    installRow.hidden = true;
+    try
+    {
+      evt.prompt();
+    }
+    catch (e) {}
+    renderInstallUi();
+  }
+
+  // One quiet mention on the main screen, once ever, so a grown-up who
+  // never opens Settings still finds out it can be installed.
+  function maybeNudgeInstall()
+  {
+    if (!canOfferInstall() || readStored(INSTALL_NUDGE_KEY) === "seen")
+    {
+      return;
+    }
+    writeStored(INSTALL_NUDGE_KEY, "seen");
+    window.setTimeout(function ()
+    {
+      if (!anyModalOpen())
+      {
+        flashMessage(T().installNudge, 5200);
+      }
+    }, 2500);
+  }
+
   /* ---------- header chip ----------
      Shows the level and opens the picker when levels are on; falls back
      to the plain session win count when they are off, so the chip never
@@ -1820,6 +1942,7 @@
     openLevelsBtn.textContent = t.changeLevel;
     document.title = t.title;
     langSelect.value = uiLang;
+    renderInstallUi();
     renderSoundBtn();
     renderChip();
     renderDots();
@@ -2841,8 +2964,10 @@
     renderChip();
     applyLevelUi();
     celebrateEl.hidden = false;
+    // One burst, not two: the pieces already spawn at staggered heights
+    // above the viewport, so a second wave 450ms later only doubled the
+    // fill cost for the same look.
     launchConfetti();
-    window.setTimeout(launchConfetti, 450);
     happySound();
     if (leveledUp)
     {
@@ -2859,6 +2984,7 @@
     locked = false;
     celebrateEl.hidden = true;
     stopSpeech();
+    stopConfetti();
     applyLevelUi();
     relayout();
     renderDots();
@@ -2869,20 +2995,48 @@
     renderChip();
   }
 
-  /* ---------- confetti ---------- */
+  /* ---------- confetti ----------
+     Written for fill rate, not for cleverness. On a big retina tablet
+     this canvas covers the whole screen, so every pixel it touches is
+     paid for twice over - once clearing, once drawing. Four things keep
+     it cheap:
+
+       - the backing store is capped below devicePixelRatio (confetti is
+         soft-edged rectangles; nobody can see the difference, and at
+         DPR 2 on an iPad it was pushing 5.6 million pixels a frame),
+       - the canvas is only resized when the size actually changed,
+         since assigning width/height reallocates the whole buffer,
+       - each piece sets its transform directly instead of
+         save/translate/rotate/restore, which is four context calls per
+         piece per frame,
+       - and the piece count is hard-capped, with the whole lot dropped
+         on reset. Without that, winning again before the previous burst
+         finished simply added another 150 on top of what was still
+         falling. */
   var cv = document.getElementById("confetti");
   var cx = cv.getContext("2d");
   var pieces = [];
   var rafId = 0;
+  var canvasW = 0;
+  var canvasH = 0;
+  var confettiDpr = 1;
+  var MAX_DPR = 1.5;
+  var MAX_PIECES = 190;
   var COLORS = ["#f94144", "#f3722c", "#f8961e", "#f9c74f", "#90be6d",
                 "#43aa8b", "#577590", "#ef476f", "#06d6a0", "#118ab2"];
 
   function sizeCanvas()
   {
-    var dpr = window.devicePixelRatio || 1;
-    cv.width = Math.floor(window.innerWidth * dpr);
-    cv.height = Math.floor(window.innerHeight * dpr);
-    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    confettiDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    var bw = Math.floor(window.innerWidth * confettiDpr);
+    var bh = Math.floor(window.innerHeight * confettiDpr);
+    if (bw !== canvasW || bh !== canvasH)
+    {
+      canvasW = bw;
+      canvasH = bh;
+      cv.width = bw;
+      cv.height = bh;
+    }
   }
 
   function makePiece()
@@ -2903,20 +3057,42 @@
   function launchConfetti()
   {
     sizeCanvas();
-    var count = reducedMotion() ? 40 : 150;
+    cv.hidden = false;
+    var want = reducedMotion() ? 40 : 120;
+    var room = MAX_PIECES - pieces.length;
+    var count = want < room ? want : room;
     for (var i = 0; i < count; i++)
     {
       pieces.push(makePiece());
     }
-    if (!rafId)
+    if (!rafId && pieces.length)
     {
       rafId = window.requestAnimationFrame(tick);
     }
   }
 
+  // Ends the burst immediately and gives the canvas back to the
+  // compositor. Called on reset, so tapping Practice Again mid-fall
+  // costs nothing instead of piling a second burst on the first.
+  function stopConfetti()
+  {
+    if (rafId)
+    {
+      window.cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+    pieces.length = 0;
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.clearRect(0, 0, cv.width, cv.height);
+    cv.hidden = true;
+  }
+
   function tick()
   {
-    cx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.clearRect(0, 0, canvasW, canvasH);
+    var limit = window.innerHeight + 40;
+    var d = confettiDpr;
     for (var i = pieces.length - 1; i >= 0; i--)
     {
       var p = pieces[i];
@@ -2924,21 +3100,19 @@
       p.y += p.vy;
       p.vy += 0.06;
       p.rot += p.vr;
-      cx.save();
-      cx.translate(p.x, p.y);
-      cx.rotate(p.rot);
+      var c = Math.cos(p.rot);
+      var s = Math.sin(p.rot);
+      cx.setTransform(d * c, d * s, -d * s, d * c, d * p.x, d * p.y);
       cx.fillStyle = p.color;
-      cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-      cx.restore();
-      if (p.y > window.innerHeight + 40)
+      cx.fillRect(-p.w * 0.5, -p.h * 0.5, p.w, p.h);
+      if (p.y > limit)
       {
         pieces.splice(i, 1);
       }
     }
     if (pieces.length === 0)
     {
-      cx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      rafId = 0;
+      stopConfetti();
       return;
     }
     rafId = window.requestAnimationFrame(tick);
@@ -2978,6 +3152,7 @@
     renderPinStatus();
     langSelect.value = uiLang;
     syncSettingsControls();
+    renderInstallUi();
     loadVoices();
     clearIdleHint();
     clearGuide();
@@ -3160,6 +3335,23 @@
   settingsSave.addEventListener("click", saveSettings);
   forgetBtn.addEventListener("click", forgetPin);
   soundBtn.addEventListener("click", toggleSound);
+  installBtn.addEventListener("click", runInstall);
+
+  window.addEventListener("beforeinstallprompt", function (e)
+  {
+    // Stop the browser's own mini-infobar so the offer appears where it
+    // belongs (Settings) rather than over the keypad.
+    e.preventDefault();
+    deferredInstall = e;
+    renderInstallUi();
+    maybeNudgeInstall();
+  });
+
+  window.addEventListener("appinstalled", function ()
+  {
+    deferredInstall = null;
+    renderInstallUi();
+  });
 
   hintsToggle.addEventListener("change", function ()
   {
@@ -3308,6 +3500,7 @@
       stopEyes();
       clearIdleHint();
       clearGuide();
+      stopConfetti();
     }
     else
     {
@@ -3334,6 +3527,20 @@
   startEyes();
   touchIdle();
   updateGuide();
+  // iOS never fires beforeinstallprompt, so the nudge has to be offered
+  // from here as well as from that event.
+  maybeNudgeInstall();
+
+  // Registered after load so it never competes with first paint. The
+  // worker is what makes the app work offline and what Chrome requires
+  // before it will offer to install the page.
+  if ("serviceWorker" in navigator)
+  {
+    window.addEventListener("load", function ()
+    {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 
   if (hasSpeech())
   {
